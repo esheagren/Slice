@@ -2,18 +2,20 @@ import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import NavBar from './components/NavBar.jsx'
 import HomePage from './components/HomePage.jsx'
+import './App.css'
 
 function App() {
   return (
     <Router>
-      <div className="App">
-        <NavBar />
-        <div className="container">
+      <div className="app-container">
+        <header className="header">
+          <NavBar />
+        </header>
+        <div className="main-layout">
           <Routes>
             <Route path="/" element={<HomePage />} />
-            {/* Add more routes as needed */}
-            <Route path="/about" element={<h1>About Page</h1>} />
-            <Route path="/contact" element={<h1>Contact Page</h1>} />
+            <Route path="/about" element={<div className="content-page"><h2>About</h2></div>} />
+            <Route path="/contact" element={<div className="content-page"><h2>Contact</h2></div>} />
           </Routes>
         </div>
       </div>

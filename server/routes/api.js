@@ -1,5 +1,6 @@
 import express from 'express';
 import embeddingService from '../services/embeddingService.js';
+import { performPCA } from '../utils/mathHelpers.js';
 
 const router = express.Router();
 
@@ -114,6 +115,59 @@ router.post('/findMidpointWords', async (req, res) => {
     
   } catch (error) {
     console.error('Error finding midpoint words:', error);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Endpoint to get 2D coordinates for visualization
+router.post('/getVectorCoordinates', async (req, res) => {
+  console.log('Received request to /getVectorCoordinates with body:', req.body);
+  try {
+    const { words } = req.body;
+    
+    // Validate input
+    if (!words || !Array.isArray(words) || words.length < 2) {
+      return res.status(400).json({ error: 'At least two words are required' });
+    }
+    
+    // Make sure embeddings are loaded
+    await embeddingService.loadEmbeddings();
+    
+    // Get vectors for all words
+    const wordVectors = [];
+    const validWords = [];
+    
+    for (const word of words) {
+      if (embeddingService.wordExists(word)) {
+        const vector = embeddingService.getWordVector(word);
+        if (vector) {
+          wordVectors.push(vector);
+          validWords.push(word);
+        }
+      }
+    }
+    
+    if (wordVectors.length < 2) {
+      return res.status(400).json({ error: 'At least two valid words are required for visualization' });
+    }
+    
+    // Perform PCA to get 2D coordinates
+    const coordinates = performPCA(wordVectors);
+    
+    // Create result mapping words to coordinates
+    const result = validWords.map((word, index) => ({
+      word,
+      x: coordinates[index][0],
+      y: coordinates[index][1]
+    }));
+    
+    return res.status(200).json({
+      success: true,
+      data: result
+    });
+    
+  } catch (error) {
+    console.error('Error getting vector coordinates:', error);
     return res.status(500).json({ error: 'Server error' });
   }
 });

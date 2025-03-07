@@ -1,62 +1,205 @@
-#root {
-  width: 100%;
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  text-align: center;
 }
 
-.App {
-  min-height: 100vh;
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   background-color: #0f172a;
-  color: #e6e6e6;
+  color: #e2e8f0;
+  overflow-x: hidden;
 }
 
-.container {
-  padding: 20px;
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* Header */
+.header {
+  background-color: #1e293b;
+  padding: 0.5rem;
+  border-bottom: 1px solid #334155;
+  text-align: center;
+  height: 50px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #60a5fa;
+  margin: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* Main layout - Desmos style */
+.main-layout {
+  display: flex;
+  flex: 1;
+  height: calc(100vh - 50px);
+  overflow: hidden;
 }
 
-.card {
-  padding: 2em;
+/* HomePage component layout */
+.home-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
 }
 
-.read-the-docs {
-  color: #888;
+/* Sidebar for inputs */
+.sidebar {
+  width: 300px;
+  min-width: 300px;
+  background-color: #1e293b;
+  border-right: 1px solid #334155;
+  padding: 0.75rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Graph area */
+.graph-area {
+  flex: 1;
+  position: relative;
+  background-color: #0f172a;
+  overflow: hidden;
+}
+
+/* Word input component */
+.word-input-container {
+  margin-bottom: 1rem;
+}
+
+.input-row {
+  margin-bottom: 0.5rem;
+}
+
+.input-row label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.input-row input {
+  width: 100%;
+  padding: 0.5rem;
+  background-color: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 0.25rem;
+  color: #e2e8f0;
+  font-size: 0.75rem;
+}
+
+.analyze-btn {
+  width: 100%;
+  padding: 0.5rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Response container */
+.response-container {
+  font-size: 0.75rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.response-message {
+  color: #34d399;
+  margin-bottom: 0.5rem;
+}
+
+.word-info {
+  background-color: #0f172a;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.word-info h4 {
+  color: #60a5fa;
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.vector-preview {
+  font-family: monospace;
+  font-size: 0.65rem;
+  word-break: break-all;
+  color: #94a3b8;
+  max-height: 40px;
+  overflow-y: auto;
+}
+
+/* Graph container */
+.graph-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.vector-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #0f172a;
+}
+
+/* Graph legend */
+.graph-legend {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  background-color: rgba(15, 23, 42, 0.8);
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  border: 1px solid #334155;
+  font-size: 0.65rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.15rem;
+}
+
+.legend-color {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 0.25rem;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .form-row {
+  .home-container {
     flex-direction: column;
   }
   
-  .form-group {
-    max-width: 100%;
+  .sidebar {
+    width: 100%;
+    height: 40%;
+    min-height: 200px;
+    border-right: none;
+    border-bottom: 1px solid #334155;
+  }
+  
+  .graph-area {
+    height: 60%;
   }
 }
