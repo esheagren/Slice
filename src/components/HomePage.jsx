@@ -13,6 +13,7 @@ const HomePage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [recursionDepth, setRecursionDepth] = useState(1);
+  const [serverUrl, setServerUrl] = useState('http://localhost:5001');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -29,14 +30,20 @@ const HomePage = () => {
     setMidpointClusters([]);
     
     try {
-      const serverUrl = 'http://localhost:5001';
       const response = await axios.post(`${serverUrl}/api/submit`, formData);
       console.log('Form submitted successfully:', response.data);
       setResponse(response.data);
       
-      // Automatically find midpoint words
+      // If both words exist, find midpoints recursively
       if (response.data.data.word1.exists && response.data.data.word2.exists) {
-        await findMidpointWords(formData.word1, formData.word2, 1, recursionDepth);
+        const clusters = await findMidpointsRecursively(
+          formData.word1, 
+          formData.word2, 
+          1, 
+          recursionDepth
+        );
+        
+        setMidpointClusters(clusters);
       }
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -46,14 +53,11 @@ const HomePage = () => {
     }
   };
   
-  const findMidpointWords = async (word1, word2, depth = 1, maxDepth = recursionDepth) => {
-    if (depth > maxDepth) return;
-    
-    setLoading(true);
-    setError(null);
+  const findMidpointsRecursively = async (word1, word2, depth = 1, maxDepth = recursionDepth) => {
+    if (depth > maxDepth) return [];
     
     try {
-      const serverUrl = 'http://localhost:5001';
+      // Find midpoint words between word1 and word2
       const result = await axios.post(`${serverUrl}/api/findMidpointWords`, {
         word1: word1,
         word2: word2,
@@ -62,46 +66,49 @@ const HomePage = () => {
       
       console.log(`Midpoint words found between ${word1} and ${word2}:`, result.data);
       
-      // Create a new cluster with parent information
-      const newCluster = {
+      // Create a cluster for this midpoint
+      const cluster = {
         level: depth,
         parent1: word1,
         parent2: word2,
         words: result.data.data.nearestWords
       };
       
-      // Add this cluster to our state
-      setMidpointClusters(prevClusters => {
-        const updatedClusters = [...prevClusters];
-        // Replace if same level exists, otherwise add
-        const existingIndex = updatedClusters.findIndex(c => 
-          c.parent1 === word1 && c.parent2 === word2);
-        
-        if (existingIndex >= 0) {
-          updatedClusters[existingIndex] = newCluster;
-        } else {
-          updatedClusters.push(newCluster);
-        }
-        return updatedClusters;
-      });
+      // Create an array to hold all clusters (starting with this one)
+      const allClusters = [cluster];
       
-      // If we need to go deeper, find secondary midpoints
-      if (depth < maxDepth && result.data.data.nearestWords.length > 0) {
-        // Use the first word from the midpoint cluster as representative
-        const midpointWord = result.data.data.nearestWords[0].word;
+      // If we haven't reached max depth, recursively find more midpoints
+      if (depth < maxDepth) {
+        // Calculate the exact midpoint vector
+        const midpointResponse = await axios.post(`${serverUrl}/api/getMidpoint`, {
+          word1: word1,
+          word2: word2
+        });
         
-        // Find midpoints between word1 and the midpoint
-        await findMidpointWords(word1, midpointWord, depth + 1, maxDepth);
+        // Find midpoints between word1 and the primary midpoint
+        const subClusters1 = await findMidpointsRecursively(
+          word1, 
+          result.data.data.nearestWords[0].word, 
+          depth + 1, 
+          maxDepth
+        );
         
-        // Find midpoints between the midpoint and word2
-        await findMidpointWords(midpointWord, word2, depth + 1, maxDepth);
+        // Find midpoints between word2 and the primary midpoint
+        const subClusters2 = await findMidpointsRecursively(
+          word2, 
+          result.data.data.nearestWords[0].word, 
+          depth + 1, 
+          maxDepth
+        );
+        
+        // Add all subclusters to our result
+        allClusters.push(...subClusters1, ...subClusters2);
       }
       
+      return allClusters;
     } catch (error) {
-      console.error('Error finding midpoint words:', error);
-      setError(error.response?.data?.error || 'An error occurred while finding midpoint words');
-    } finally {
-      setLoading(false);
+      console.error(`Error finding midpoints recursively at depth ${depth}:`, error);
+      return [];
     }
   };
   
@@ -116,7 +123,7 @@ const HomePage = () => {
     // If we have valid words, recalculate with new depth
     if (formData.word1 && formData.word2 && 
         response?.data?.word1?.exists && response?.data?.word2?.exists) {
-      await findMidpointWords(formData.word1, formData.word2, 1, newDepth);
+      await findMidpointsRecursively(formData.word1, formData.word2, 1, newDepth);
     }
   };
 

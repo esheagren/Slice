@@ -82,7 +82,11 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
     if (!coordinates.length || !canvasRef.current) return;
     
     const canvas = canvasRef.current;
+    if (!canvas) return;
+    
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
     const width = canvas.width;
     const height = canvas.height;
     
@@ -100,7 +104,7 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
     });
     
     // Add some padding
-    const padding = 40;
+    const padding = 60;
     const scaleX = (width - 2 * padding) / (maxX - minX || 1);
     const scaleY = (height - 2 * padding) / (maxY - minY || 1);
     
@@ -152,19 +156,99 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
     
     ctx.stroke();
     
-    // Draw lines connecting word1 to word2
+    // Find the points for word1, word2, and midpoint
     const word1Point = coordinates.find(p => p.word === word1);
     const word2Point = coordinates.find(p => p.word === word2);
+    const exactMidpointPoint = coordinates.find(p => p.isExactMidpoint);
     
+    // Draw lines connecting the points
     if (word1Point && word2Point) {
       ctx.beginPath();
       ctx.strokeStyle = '#64748b';
       ctx.lineWidth = 1;
       ctx.setLineDash([3, 2]);
-      ctx.moveTo(toCanvasX(word1Point.x), toCanvasY(word1Point.y));
-      ctx.lineTo(toCanvasX(word2Point.x), toCanvasY(word2Point.y));
+      
+      // If we have an exact midpoint, draw lines through it
+      if (exactMidpointPoint) {
+        ctx.moveTo(toCanvasX(word1Point.x), toCanvasY(word1Point.y));
+        ctx.lineTo(toCanvasX(exactMidpointPoint.x), toCanvasY(exactMidpointPoint.y));
+        ctx.lineTo(toCanvasX(word2Point.x), toCanvasY(word2Point.y));
+      } else {
+        // Direct line if no midpoint
+        ctx.moveTo(toCanvasX(word1Point.x), toCanvasY(word1Point.y));
+        ctx.lineTo(toCanvasX(word2Point.x), toCanvasY(word2Point.y));
+      }
+      
       ctx.stroke();
       ctx.setLineDash([]);
+    }
+    
+    // Draw additional lines for recursive midpoints if they exist
+    if (midpointWords && midpointWords.length > 0) {
+      // Draw lines for primary midpoint cluster
+      const primaryMidpointWords = midpointWords[0]?.words || [];
+      if (primaryMidpointWords.length > 0 && word1Point && word2Point && exactMidpointPoint) {
+        ctx.beginPath();
+        ctx.strokeStyle = '#34A853'; // Green for primary midpoint connections
+        ctx.lineWidth = 0.8;
+        ctx.setLineDash([2, 2]);
+        
+        primaryMidpointWords.forEach(item => {
+          const point = coordinates.find(p => p.word === item.word);
+          if (point) {
+            ctx.moveTo(toCanvasX(exactMidpointPoint.x), toCanvasY(exactMidpointPoint.y));
+            ctx.lineTo(toCanvasX(point.x), toCanvasY(point.y));
+          }
+        });
+        
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      
+      // Draw lines for secondary midpoint clusters if they exist
+      if (midpointWords.length > 1) {
+        // Secondary midpoint between word1 and primary midpoint
+        const secondaryMidpoint1Words = midpointWords[1]?.words || [];
+        if (secondaryMidpoint1Words.length > 0 && word1Point && exactMidpointPoint) {
+          ctx.beginPath();
+          ctx.strokeStyle = '#4285F4'; // Blue for secondary midpoint connections
+          ctx.lineWidth = 0.8;
+          ctx.setLineDash([2, 2]);
+          
+          secondaryMidpoint1Words.forEach(item => {
+            const point = coordinates.find(p => p.word === item.word);
+            if (point) {
+              ctx.moveTo(toCanvasX((word1Point.x + exactMidpointPoint.x) / 2), 
+                         toCanvasY((word1Point.y + exactMidpointPoint.y) / 2));
+              ctx.lineTo(toCanvasX(point.x), toCanvasY(point.y));
+            }
+          });
+          
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        
+        // Secondary midpoint between word2 and primary midpoint
+        const secondaryMidpoint2Words = midpointWords[2]?.words || [];
+        if (secondaryMidpoint2Words.length > 0 && word2Point && exactMidpointPoint) {
+          ctx.beginPath();
+          ctx.strokeStyle = '#EA4335'; // Red for secondary midpoint connections
+          ctx.lineWidth = 0.8;
+          ctx.setLineDash([2, 2]);
+          
+          secondaryMidpoint2Words.forEach(item => {
+            const point = coordinates.find(p => p.word === item.word);
+            if (point) {
+              ctx.moveTo(toCanvasX((word2Point.x + exactMidpointPoint.x) / 2), 
+                         toCanvasY((word2Point.y + exactMidpointPoint.y) / 2));
+              ctx.lineTo(toCanvasX(point.x), toCanvasY(point.y));
+            }
+          });
+          
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
     }
     
     // Draw points and labels
@@ -178,23 +262,58 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
       // Different colors for different types of words
       if (point.word === word1) {
         ctx.fillStyle = '#4285F4'; // Blue for word1
-        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.arc(x, y, 8, 0, Math.PI * 2);
       } else if (point.word === word2) {
         ctx.fillStyle = '#EA4335'; // Red for word2
-        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.arc(x, y, 8, 0, Math.PI * 2);
+      } else if (point.isExactMidpoint) {
+        ctx.fillStyle = '#FBBC05'; // Yellow for the exact midpoint
+        ctx.arc(x, y, 10, 0, Math.PI * 2); // Slightly larger for emphasis
       } else {
-        ctx.fillStyle = '#34A853'; // Green for midpoint words
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        // Find which cluster this word belongs to
+        let clusterIndex = -1;
+        if (midpointWords) {
+          for (let i = 0; i < midpointWords.length; i++) {
+            if (midpointWords[i] && midpointWords[i].words) {
+              const found = midpointWords[i].words.some(item => item.word === point.word);
+              if (found) {
+                clusterIndex = i;
+                break;
+              }
+            }
+          }
+        }
+        
+        // Color based on cluster index
+        const colors = ['#34A853', '#4285F4', '#EA4335', '#9C27B0', '#FF9800'];
+        ctx.fillStyle = colors[clusterIndex % colors.length] || '#34A853';
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
       }
       
       ctx.fill();
       
-      // Draw label with larger font size
+      // Add a dark outline to the points for better visibility
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      
+      // Draw label with improved visibility
+      const label = point.isExactMidpoint ? "Exact Midpoint" : point.word;
+      
+      // First draw a semi-transparent background for the text
+      ctx.font = 'bold 16px Arial';
+      const textMetrics = ctx.measureText(label);
+      const textWidth = textMetrics.width;
+      const textHeight = 16; // Approximate height for the font size
+      
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.7)'; // Semi-transparent dark background
+      ctx.fillRect(x - textWidth/2 - 4, y - textHeight - 14, textWidth + 8, textHeight + 4);
+      
+      // Then draw the text
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = '14px Arial'; // Increased from 10px to 14px
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
-      ctx.fillText(point.word, x, y - 10); // Increased spacing from -8 to -10
+      ctx.fillText(label, x, y - 12);
     });
   };
   

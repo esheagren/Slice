@@ -144,6 +144,20 @@ router.post('/getVectorCoordinates', async (req, res) => {
       });
     }
     
+    // Find word1 and word2 in the vectors array
+    const word1Item = vectors.find(item => item.word === words[0]);
+    const word2Item = vectors.find(item => item.word === words[1]);
+    
+    // Calculate and add exact midpoint if both words exist
+    if (word1Item && word2Item) {
+      const midpointVector = embeddingService.calculateMidpoint(word1Item.vector, word2Item.vector);
+      vectors.push({
+        word: 'exactMidpoint',
+        vector: midpointVector,
+        isExactMidpoint: true
+      });
+    }
+    
     // Extract just the vectors for PCA
     const vectorsOnly = vectors.map(item => item.vector);
     
@@ -154,7 +168,8 @@ router.post('/getVectorCoordinates', async (req, res) => {
     const result = vectors.map((item, index) => ({
       word: item.word,
       x: coordinates2D[index][0],
-      y: coordinates2D[index][1]
+      y: coordinates2D[index][1],
+      isExactMidpoint: item.isExactMidpoint || false
     }));
     
     res.json({
