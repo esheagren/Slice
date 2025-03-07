@@ -8,6 +8,7 @@ const HomePage = () => {
     word2: ''
   });
   const [response, setResponse] = useState(null);
+  const [midpointWords, setMidpointWords] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -23,9 +24,9 @@ const HomePage = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setMidpointWords(null);
     
     try {
-      // Try with the full URL to your server
       const serverUrl = 'http://localhost:5001'; // Adjust port if needed
       const response = await axios.post(`${serverUrl}/api/submit`, formData);
       console.log('Form submitted successfully:', response.data);
@@ -33,6 +34,33 @@ const HomePage = () => {
     } catch (error) {
       console.error('Error submitting form:', error);
       setError(error.response?.data?.error || 'An error occurred while processing your request');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const findMidpointWords = async () => {
+    if (!response || !response.data.word1.exists || !response.data.word2.exists) {
+      setError('Both words must exist in the embeddings to find midpoint words');
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const serverUrl = 'http://localhost:5001'; // Adjust port if needed
+      const result = await axios.post(`${serverUrl}/api/findMidpointWords`, {
+        word1: formData.word1,
+        word2: formData.word2,
+        numNeighbors: 10 // Get 10 nearest neighbors
+      });
+      
+      console.log('Midpoint words found:', result.data);
+      setMidpointWords(result.data.data);
+    } catch (error) {
+      console.error('Error finding midpoint words:', error);
+      setError(error.response?.data?.error || 'An error occurred while finding midpoint words');
     } finally {
       setLoading(false);
     }
@@ -86,6 +114,16 @@ const HomePage = () => {
           <h3>Results:</h3>
           <p className="response-message">{response.message}</p>
           
+          {response.data.word1.exists && response.data.word2.exists && (
+            <button 
+              onClick={findMidpointWords} 
+              className="midpoint-btn"
+              disabled={loading}
+            >
+              Find Words Near Midpoint
+            </button>
+          )}
+          
           {response.data.word1.exists && (
             <div className="word-info">
               <h4>"{formData.word1}" vector:</h4>
@@ -106,10 +144,28 @@ const HomePage = () => {
               <p className="vector-preview">{response.data.midpoint}</p>
             </div>
           )}
+          
+          {midpointWords && (
+            <div className="midpoint-words">
+              <h4>Words near the midpoint:</h4>
+              <ul className="word-list">
+                {midpointWords.nearestWords.map((item, index) => (
+                  <li key={index} className="word-item">
+                    <span className="word-text">{item.word}</span>
+                    <span className="word-distance">(Distance: {item.distance.toFixed(4)})</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
       
-      <VectorGraph />
+      <VectorGraph 
+        word1={formData.word1}
+        word2={formData.word2}
+        midpointWords={midpointWords?.nearestWords}
+      />
     </div>
   );
 };

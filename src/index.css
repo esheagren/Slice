@@ -310,3 +310,56 @@ input::placeholder {
     background-color: #f9f9f9;
   }
 }
+
+/* Add these styles to your existing CSS */
+.midpoint-btn {
+  margin: 15px 0;
+  padding: 10px 20px;
+  background: #3a6ad4;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.midpoint-btn:hover {
+  background: #2a5ac4;
+}
+
+.midpoint-words {
+  margin-top: 20px;
+  padding: 15px;
+  background: #1e293b;
+  border-radius: 8px;
+}
+
+.word-list {
+  list-style: none;
+  padding: 0;
+}
+
+.word-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #2d3748;
+  display: flex;
+  justify-content: space-between;
+}
+
+.word-text {
+  font-weight: bold;
+  color: #4d80e4;
+}
+
+.word-distance {
+  color: #a0aec0;
+  font-size: 0.9rem;
+}
+
+.vector-label.mid {
+  position: absolute;
+  transform: translateX(-50%);
+  top: 30px;
+  color: #e94560;
+}
