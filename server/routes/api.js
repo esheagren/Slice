@@ -131,12 +131,7 @@ router.post('/getVectorCoordinates', async (req, res) => {
     for (const word of words) {
       const vector = embeddingService.getWordVector(word);
       if (vector) {
-        vectors.push({ 
-          word, 
-          vector,
-          // Add truncated vector for display on hover
-          truncatedVector: `[${vector.slice(0, 5).join(', ')}...]`
-        });
+        vectors.push({ word, vector });
       } else {
         invalidWords.push(word);
       }

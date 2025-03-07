@@ -310,7 +310,7 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
       ctx.stroke();
       
       // Draw label with improved visibility
-      const label = point.isExactMidpoint ? "Exact Midpoint" : point.word;
+      const label = point.isExactMidpoint ? "" : point.word;
       
       // First draw a semi-transparent background for the text
       ctx.font = 'bold 16px Arial';
@@ -318,14 +318,17 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
       const textWidth = textMetrics.width;
       const textHeight = 16; // Approximate height for the font size
       
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.7)'; // Semi-transparent dark background
-      ctx.fillRect(x - textWidth/2 - 4, y - textHeight - 14, textWidth + 8, textHeight + 4);
-      
-      // Then draw the text
-      ctx.fillStyle = '#FFFFFF';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText(label, x, y - 12);
+      // Only draw text background if there's text to display
+      if (label) {
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.7)'; // Semi-transparent dark background
+        ctx.fillRect(x - textWidth/2 - 4, y - textHeight - 14, textWidth + 8, textHeight + 4);
+        
+        // Then draw the text
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(label, x, y - 12);
+      }
     });
     
     // Add mouse move listener for hover effect
