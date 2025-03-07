@@ -1,3 +1,17 @@
+# Node modules
+node_modules/
+
+# Build directories
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
 # Logs
 logs
 *.log
@@ -6,11 +20,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +31,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Embedding files
+server/embeddings/*.bin
+server/embeddings/*.txt
+server/embeddings/*.json
+
+# Keep the embeddings directory itself
+!server/embeddings/.gitkeep
