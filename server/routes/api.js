@@ -96,13 +96,19 @@ router.post('/findMidpointWords', async (req, res) => {
     // Find nearest neighbors to midpoint
     const nearestWords = embeddingService.findNearestNeighbors(midpoint, numNeighbors);
     
+    // Filter out the original input words
+    const filteredNearestWords = nearestWords.filter(item => 
+      item.word.toLowerCase() !== word1.toLowerCase() && 
+      item.word.toLowerCase() !== word2.toLowerCase()
+    );
+    
     return res.status(200).json({
       success: true,
       data: {
         word1,
         word2,
         midpoint: midpoint.slice(0, 5).join(', ') + '...',
-        nearestWords
+        nearestWords: filteredNearestWords
       }
     });
     
