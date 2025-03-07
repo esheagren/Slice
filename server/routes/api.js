@@ -61,61 +61,57 @@ router.post('/submit', async (req, res) => {
   }
 });
 
-// Endpoint to find words near the midpoint of two words
+// Endpoint to find midpoint words between any two words
 router.post('/findMidpointWords', async (req, res) => {
-  console.log('Received request to /findMidpointWords with body:', req.body);
   try {
-    const { word1, word2, numNeighbors = 5 } = req.body;
+    const { word1, word2, numNeighbors = 10 } = req.body;
     
-    // Validate input
     if (!word1 || !word2) {
       return res.status(400).json({ error: 'Both words are required' });
     }
     
-    // Make sure embeddings are loaded
-    await embeddingService.loadEmbeddings();
-    
-    // Check if words exist in embeddings
-    const word1Exists = embeddingService.wordExists(word1);
-    const word2Exists = embeddingService.wordExists(word2);
-    
-    if (!word1Exists || !word2Exists) {
-      return res.status(404).json({ 
-        error: 'One or both words not found in embeddings',
-        word1Exists,
-        word2Exists
-      });
-    }
-    
-    // Get vectors
+    // Get vectors for both words
     const vector1 = embeddingService.getWordVector(word1);
     const vector2 = embeddingService.getWordVector(word2);
     
-    // Calculate midpoint
-    const midpoint = embeddingService.calculateMidpoint(vector1, vector2);
+    if (!vector1) {
+      return res.status(404).json({ error: `Word "${word1}" not found in vocabulary` });
+    }
     
-    // Find nearest neighbors to midpoint
-    const nearestWords = embeddingService.findNearestNeighbors(midpoint, numNeighbors);
+    if (!vector2) {
+      return res.status(404).json({ error: `Word "${word2}" not found in vocabulary` });
+    }
     
-    // Filter out the original input words
-    const filteredNearestWords = nearestWords.filter(item => 
-      item.word.toLowerCase() !== word1.toLowerCase() && 
-      item.word.toLowerCase() !== word2.toLowerCase()
-    );
+    // Calculate midpoint vector
+    const midpointVector = embeddingService.calculateMidpoint(vector1, vector2);
     
-    return res.status(200).json({
-      success: true,
+    // Find nearest neighbors to the midpoint
+    const nearestWords = embeddingService.findNearestNeighbors(midpointVector, numNeighbors);
+    
+    // Calculate distances from each word to the original words
+    const enhancedResults = nearestWords.map(item => {
+      const wordVector = embeddingService.getWordVector(item.word);
+      const distanceToWord1 = embeddingService.calculateEuclideanDistance(wordVector, vector1);
+      const distanceToWord2 = embeddingService.calculateEuclideanDistance(wordVector, vector2);
+      
+      return {
+        ...item,
+        distanceToWord1,
+        distanceToWord2
+      };
+    });
+    
+    res.json({
+      message: 'Midpoint words found successfully',
       data: {
         word1,
         word2,
-        midpoint: midpoint.slice(0, 5).join(', ') + '...',
-        nearestWords: filteredNearestWords
+        nearestWords: enhancedResults
       }
     });
-    
   } catch (error) {
     console.error('Error finding midpoint words:', error);
-    return res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Failed to find midpoint words' });
   }
 });
 
