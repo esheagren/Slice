@@ -251,10 +251,22 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
       }
     }
     
+    // Store point coordinates for hover detection
+    const points = [];
+    
     // Draw points and labels
     coordinates.forEach(point => {
       const x = toCanvasX(point.x);
       const y = toCanvasY(point.y);
+      
+      // Store point data for hover detection
+      points.push({
+        x, 
+        y, 
+        radius: point.isExactMidpoint ? 10 : (point.word === word1 || point.word === word2 ? 8 : 6),
+        word: point.word,
+        truncatedVector: point.truncatedVector
+      });
       
       // Draw point
       ctx.beginPath();
@@ -315,12 +327,91 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
       ctx.textBaseline = 'bottom';
       ctx.fillText(label, x, y - 12);
     });
+    
+    // Add mouse move listener for hover effect
+    canvas.onmousemove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      // Check if mouse is over any point
+      let hoveredPoint = null;
+      for (const point of points) {
+        const distance = Math.sqrt((mouseX - point.x) ** 2 + (mouseY - point.y) ** 2);
+        if (distance <= point.radius) {
+          hoveredPoint = point;
+          break;
+        }
+      }
+      
+      // Show tooltip if hovering over a point
+      if (hoveredPoint) {
+        canvas.style.cursor = 'pointer';
+        
+        // Clear any previous tooltip
+        const existingTooltip = document.getElementById('vector-tooltip');
+        if (existingTooltip) {
+          existingTooltip.remove();
+        }
+        
+        // Create tooltip
+        const tooltip = document.createElement('div');
+        tooltip.id = 'vector-tooltip';
+        tooltip.style.position = 'absolute';
+        tooltip.style.left = `${e.clientX + 10}px`;
+        tooltip.style.top = `${e.clientY + 10}px`;
+        tooltip.style.backgroundColor = 'rgba(15, 23, 42, 0.9)';
+        tooltip.style.color = 'white';
+        tooltip.style.padding = '8px 12px';
+        tooltip.style.borderRadius = '4px';
+        tooltip.style.fontSize = '14px';
+        tooltip.style.zIndex = '1000';
+        tooltip.style.pointerEvents = 'none';
+        tooltip.style.maxWidth = '300px';
+        tooltip.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
+        
+        tooltip.innerHTML = `<strong>${hoveredPoint.word}</strong><br>${hoveredPoint.truncatedVector}`;
+        
+        document.body.appendChild(tooltip);
+      } else {
+        canvas.style.cursor = 'default';
+        
+        // Remove tooltip if not hovering over any point
+        const existingTooltip = document.getElementById('vector-tooltip');
+        if (existingTooltip) {
+          existingTooltip.remove();
+        }
+      }
+    };
+    
+    // Clean up tooltip when mouse leaves canvas
+    canvas.onmouseleave = () => {
+      const existingTooltip = document.getElementById('vector-tooltip');
+      if (existingTooltip) {
+        existingTooltip.remove();
+      }
+    };
   };
   
   // Draw visualization when coordinates change
   useEffect(() => {
     drawVisualization();
   }, [coordinates]);
+  
+  // Clean up event listeners when component unmounts
+  useEffect(() => {
+    return () => {
+      if (canvasRef.current) {
+        canvasRef.current.onmousemove = null;
+        canvasRef.current.onmouseleave = null;
+      }
+      
+      const existingTooltip = document.getElementById('vector-tooltip');
+      if (existingTooltip) {
+        existingTooltip.remove();
+      }
+    };
+  }, []);
   
   return (
     <div className="graph-container" ref={containerRef}>

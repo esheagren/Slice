@@ -131,7 +131,12 @@ router.post('/getVectorCoordinates', async (req, res) => {
     for (const word of words) {
       const vector = embeddingService.getWordVector(word);
       if (vector) {
-        vectors.push({ word, vector });
+        vectors.push({ 
+          word, 
+          vector,
+          // Add truncated vector for display on hover
+          truncatedVector: `[${vector.slice(0, 5).join(', ')}...]`
+        });
       } else {
         invalidWords.push(word);
       }
@@ -154,7 +159,9 @@ router.post('/getVectorCoordinates', async (req, res) => {
       vectors.push({
         word: 'exactMidpoint',
         vector: midpointVector,
-        isExactMidpoint: true
+        isExactMidpoint: true,
+        // Add truncated vector for midpoint too
+        truncatedVector: `[${midpointVector.slice(0, 5).join(', ')}...]`
       });
     }
     
@@ -169,7 +176,8 @@ router.post('/getVectorCoordinates', async (req, res) => {
       word: item.word,
       x: coordinates2D[index][0],
       y: coordinates2D[index][1],
-      isExactMidpoint: item.isExactMidpoint || false
+      isExactMidpoint: item.isExactMidpoint || false,
+      truncatedVector: item.truncatedVector // Include truncated vector in response
     }));
     
     res.json({
