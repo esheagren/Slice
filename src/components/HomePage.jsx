@@ -79,16 +79,13 @@ const HomePage = () => {
       
       // If we haven't reached max depth, recursively find more midpoints
       if (depth < maxDepth) {
-        // Calculate the exact midpoint vector
-        const midpointResponse = await axios.post(`${serverUrl}/api/getMidpoint`, {
-          word1: word1,
-          word2: word2
-        });
+        // Get the primary midpoint word (first word in the nearest words)
+        const primaryMidpointWord = result.data.data.nearestWords[0].word;
         
         // Find midpoints between word1 and the primary midpoint
         const subClusters1 = await findMidpointsRecursively(
           word1, 
-          result.data.data.nearestWords[0].word, 
+          primaryMidpointWord, 
           depth + 1, 
           maxDepth
         );
@@ -96,7 +93,7 @@ const HomePage = () => {
         // Find midpoints between word2 and the primary midpoint
         const subClusters2 = await findMidpointsRecursively(
           word2, 
-          result.data.data.nearestWords[0].word, 
+          primaryMidpointWord, 
           depth + 1, 
           maxDepth
         );
@@ -117,13 +114,23 @@ const HomePage = () => {
     const newDepth = parseInt(e.target.value);
     setRecursionDepth(newDepth);
     
-    // Clear existing clusters
-    setMidpointClusters([]);
-    
     // If we have valid words, recalculate with new depth
     if (formData.word1 && formData.word2 && 
         response?.data?.word1?.exists && response?.data?.word2?.exists) {
-      await findMidpointsRecursively(formData.word1, formData.word2, 1, newDepth);
+      setLoading(true);
+      try {
+        const clusters = await findMidpointsRecursively(
+          formData.word1, 
+          formData.word2, 
+          1, 
+          newDepth
+        );
+        setMidpointClusters(clusters);
+      } catch (error) {
+        console.error('Error updating midpoint clusters:', error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -149,7 +156,7 @@ const HomePage = () => {
                 type="range"
                 id="recursion-depth"
                 min="1"
-                max="5"
+                max="3"
                 value={recursionDepth}
                 onChange={handleRecursionDepthChange}
                 disabled={loading}

@@ -215,11 +215,17 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
           ctx.lineWidth = 0.8;
           ctx.setLineDash([2, 2]);
           
+          // Find the secondary midpoint center (between word1 and exactMidpoint)
+          const secondaryMidpoint1Center = {
+            x: (word1Point.x + exactMidpointPoint.x) / 2,
+            y: (word1Point.y + exactMidpointPoint.y) / 2
+          };
+          
           secondaryMidpoint1Words.forEach(item => {
             const point = coordinates.find(p => p.word === item.word);
             if (point) {
-              ctx.moveTo(toCanvasX((word1Point.x + exactMidpointPoint.x) / 2), 
-                         toCanvasY((word1Point.y + exactMidpointPoint.y) / 2));
+              ctx.moveTo(toCanvasX(secondaryMidpoint1Center.x), 
+                         toCanvasY(secondaryMidpoint1Center.y));
               ctx.lineTo(toCanvasX(point.x), toCanvasY(point.y));
             }
           });
@@ -236,11 +242,17 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
           ctx.lineWidth = 0.8;
           ctx.setLineDash([2, 2]);
           
+          // Find the secondary midpoint center (between word2 and exactMidpoint)
+          const secondaryMidpoint2Center = {
+            x: (word2Point.x + exactMidpointPoint.x) / 2,
+            y: (word2Point.y + exactMidpointPoint.y) / 2
+          };
+          
           secondaryMidpoint2Words.forEach(item => {
             const point = coordinates.find(p => p.word === item.word);
             if (point) {
-              ctx.moveTo(toCanvasX((word2Point.x + exactMidpointPoint.x) / 2), 
-                         toCanvasY((word2Point.y + exactMidpointPoint.y) / 2));
+              ctx.moveTo(toCanvasX(secondaryMidpoint2Center.x), 
+                         toCanvasY(secondaryMidpoint2Center.y));
               ctx.lineTo(toCanvasX(point.x), toCanvasY(point.y));
             }
           });
