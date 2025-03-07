@@ -117,54 +117,54 @@ router.post('/findMidpointWords', async (req, res) => {
 
 // Endpoint to get 2D coordinates for visualization
 router.post('/getVectorCoordinates', async (req, res) => {
-  console.log('Received request to /getVectorCoordinates with body:', req.body);
   try {
     const { words } = req.body;
     
-    // Validate input
-    if (!words || !Array.isArray(words) || words.length < 2) {
-      return res.status(400).json({ error: 'At least two words are required' });
+    if (!words || !Array.isArray(words) || words.length === 0) {
+      return res.status(400).json({ error: 'Invalid words array' });
     }
     
-    // Make sure embeddings are loaded
-    await embeddingService.loadEmbeddings();
-    
     // Get vectors for all words
-    const wordVectors = [];
-    const validWords = [];
+    const vectors = [];
+    const invalidWords = [];
     
     for (const word of words) {
-      if (embeddingService.wordExists(word)) {
-        const vector = embeddingService.getWordVector(word);
-        if (vector) {
-          wordVectors.push(vector);
-          validWords.push(word);
-        }
+      const vector = embeddingService.getWordVector(word);
+      if (vector) {
+        vectors.push({ word, vector });
+      } else {
+        invalidWords.push(word);
       }
     }
     
-    if (wordVectors.length < 2) {
-      return res.status(400).json({ error: 'At least two valid words are required for visualization' });
+    if (vectors.length === 0) {
+      return res.status(404).json({ 
+        error: 'None of the provided words were found in the vocabulary',
+        invalidWords
+      });
     }
     
-    // Perform PCA to get 2D coordinates
-    const coordinates = performPCA(wordVectors);
+    // Extract just the vectors for PCA
+    const vectorsOnly = vectors.map(item => item.vector);
     
-    // Create result mapping words to coordinates
-    const result = validWords.map((word, index) => ({
-      word,
-      x: coordinates[index][0],
-      y: coordinates[index][1]
+    // Perform PCA to get 2D coordinates
+    const coordinates2D = performPCA(vectorsOnly);
+    
+    // Combine words with their 2D coordinates
+    const result = vectors.map((item, index) => ({
+      word: item.word,
+      x: coordinates2D[index][0],
+      y: coordinates2D[index][1]
     }));
     
-    return res.status(200).json({
-      success: true,
-      data: result
+    res.json({
+      message: 'Vector coordinates calculated successfully',
+      data: result,
+      invalidWords: invalidWords.length > 0 ? invalidWords : undefined
     });
-    
   } catch (error) {
-    console.error('Error getting vector coordinates:', error);
-    return res.status(500).json({ error: 'Server error' });
+    console.error('Error calculating vector coordinates:', error);
+    res.status(500).json({ error: 'Failed to calculate vector coordinates' });
   }
 });
 

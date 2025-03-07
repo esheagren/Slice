@@ -163,26 +163,34 @@ body {
 /* Graph legend */
 .graph-legend {
   position: absolute;
-  bottom: 0.5rem;
-  left: 0.5rem;
-  background-color: rgba(15, 23, 42, 0.8);
-  padding: 0.25rem;
+  bottom: 1rem;
+  left: 1rem;
+  background-color: rgba(15, 23, 42, 0.85);
+  padding: 0.5rem;
   border-radius: 0.25rem;
   border: 1px solid #334155;
-  font-size: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  margin-bottom: 0.15rem;
+  margin-bottom: 0.35rem;
 }
 
 .legend-color {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  margin-right: 0.25rem;
+  margin-right: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.legend-label {
+  white-space: nowrap;
 }
 
 /* Responsive adjustments */
