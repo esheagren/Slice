@@ -7,6 +7,9 @@ const HomePage = () => {
     word1: '',
     word2: ''
   });
+  const [response, setResponse] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -18,13 +21,20 @@ const HomePage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
     
     try {
-      const response = await axios.post('/api/submit', formData);
+      // Try with the full URL to your server
+      const serverUrl = 'http://localhost:5001'; // Adjust port if needed
+      const response = await axios.post(`${serverUrl}/api/submit`, formData);
       console.log('Form submitted successfully:', response.data);
-      // Process vector data here
+      setResponse(response.data);
     } catch (error) {
       console.error('Error submitting form:', error);
+      setError(error.response?.data?.error || 'An error occurred while processing your request');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,9 +69,45 @@ const HomePage = () => {
             />
           </div>
           
-          <button type="submit" className="submit-btn">Analyze</button>
+          <button type="submit" className="submit-btn" disabled={loading}>
+            {loading ? 'Processing...' : 'Analyze'}
+          </button>
         </div>
       </form>
+      
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
+      
+      {response && (
+        <div className="response-container">
+          <h3>Results:</h3>
+          <p className="response-message">{response.message}</p>
+          
+          {response.data.word1.exists && (
+            <div className="word-info">
+              <h4>"{formData.word1}" vector:</h4>
+              <p className="vector-preview">{response.data.word1.vector}</p>
+            </div>
+          )}
+          
+          {response.data.word2.exists && (
+            <div className="word-info">
+              <h4>"{formData.word2}" vector:</h4>
+              <p className="vector-preview">{response.data.word2.vector}</p>
+            </div>
+          )}
+          
+          {response.data.midpoint && (
+            <div className="word-info">
+              <h4>Midpoint vector:</h4>
+              <p className="vector-preview">{response.data.midpoint}</p>
+            </div>
+          )}
+        </div>
+      )}
       
       <VectorGraph />
     </div>
