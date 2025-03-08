@@ -204,7 +204,7 @@ const HomePage = () => {
               </div>
               
               <div className="midpoints-control">
-                <label htmlFor="num-midpoints">Number of Midpoints:</label>
+                <label htmlFor="num-midpoints">Cluster Size:</label>
                 <input
                   type="range"
                   id="num-midpoints"
