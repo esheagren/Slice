@@ -110,7 +110,7 @@ const HomePage = () => {
   };
   
   // Handle recursion depth change
-  const handleRecursionDepthChange = async (e) => {
+  const handleRecursionDepthChange = (e) => {
     const newDepth = parseInt(e.target.value);
     setRecursionDepth(newDepth);
     
@@ -119,7 +119,7 @@ const HomePage = () => {
         response?.data?.word1?.exists && response?.data?.word2?.exists) {
       setLoading(true);
       try {
-        const clusters = await findMidpointsRecursively(
+        const clusters = findMidpointsRecursively(
           formData.word1, 
           formData.word2, 
           1, 
