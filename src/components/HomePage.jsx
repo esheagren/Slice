@@ -14,6 +14,7 @@ const HomePage = () => {
   const [error, setError] = useState(null);
   const [recursionDepth, setRecursionDepth] = useState(1);
   const [serverUrl, setServerUrl] = useState('http://localhost:5001');
+  const [numMidpoints, setNumMidpoints] = useState(5); // Default to 5 midpoints
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,7 +62,7 @@ const HomePage = () => {
       const result = await axios.post(`${serverUrl}/api/findMidpointWords`, {
         word1: word1,
         word2: word2,
-        numNeighbors: 10
+        numNeighbors: numMidpoints // Use the user-selected number of midpoints
       });
       
       console.log(`Midpoint words found between ${word1} and ${word2}:`, result.data);
@@ -140,6 +141,37 @@ const HomePage = () => {
     }
   };
 
+  // Handle number of midpoints change
+  const handleNumMidpointsChange = async (e) => {
+    const newNumMidpoints = parseInt(e.target.value);
+    setNumMidpoints(newNumMidpoints);
+    
+    // If we have valid words, recalculate with new number of midpoints
+    if (formData.word1 && formData.word2 && 
+        response?.data?.word1?.exists && response?.data?.word2?.exists) {
+      setLoading(true);
+      setMidpointClusters([]); // Clear existing clusters while loading
+      
+      try {
+        // Directly call the API to find midpoints recursively with the new number of midpoints
+        const clusters = await findMidpointsRecursively(
+          formData.word1, 
+          formData.word2, 
+          1, 
+          recursionDepth
+        );
+        
+        console.log(`Recalculated clusters with ${newNumMidpoints} midpoints:`, clusters);
+        setMidpointClusters(clusters);
+      } catch (error) {
+        console.error('Error updating midpoint clusters:', error);
+        setError('Failed to update visualization with new number of midpoints');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   return (
     <div className="app-container">
       <div className="header">
@@ -156,18 +188,34 @@ const HomePage = () => {
           />
           
           {response && response.data.word1.exists && response.data.word2.exists && (
-            <div className="recursion-control">
-              <label htmlFor="recursion-depth">Midpoint Recursion Depth:</label>
-              <input
-                type="range"
-                id="recursion-depth"
-                min="1"
-                max="3"
-                value={recursionDepth}
-                onChange={handleRecursionDepthChange}
-                disabled={loading}
-              />
-              <span className="depth-value">{recursionDepth}</span>
+            <div className="controls-container">
+              <div className="recursion-control">
+                <label htmlFor="recursion-depth">Midpoint Recursion Depth:</label>
+                <input
+                  type="range"
+                  id="recursion-depth"
+                  min="1"
+                  max="3"
+                  value={recursionDepth}
+                  onChange={handleRecursionDepthChange}
+                  disabled={loading}
+                />
+                <span className="depth-value">{recursionDepth}</span>
+              </div>
+              
+              <div className="midpoints-control">
+                <label htmlFor="num-midpoints">Number of Midpoints:</label>
+                <input
+                  type="range"
+                  id="num-midpoints"
+                  min="1"
+                  max="8"
+                  value={numMidpoints}
+                  onChange={handleNumMidpointsChange}
+                  disabled={loading}
+                />
+                <span className="midpoints-value">{numMidpoints}</span>
+              </div>
             </div>
           )}
           
@@ -211,6 +259,7 @@ const HomePage = () => {
             word2={formData.word2}
             midpointWords={midpointClusters}
             recursionDepth={recursionDepth}
+            numMidpoints={numMidpoints}
           />
         </div>
       </div>
