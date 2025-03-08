@@ -110,7 +110,7 @@ const HomePage = () => {
   };
   
   // Handle recursion depth change
-  const handleRecursionDepthChange = (e) => {
+  const handleRecursionDepthChange = async (e) => {
     const newDepth = parseInt(e.target.value);
     setRecursionDepth(newDepth);
     
@@ -118,16 +118,22 @@ const HomePage = () => {
     if (formData.word1 && formData.word2 && 
         response?.data?.word1?.exists && response?.data?.word2?.exists) {
       setLoading(true);
+      setMidpointClusters([]); // Clear existing clusters while loading
+      
       try {
-        const clusters = findMidpointsRecursively(
+        // Directly call the API to find midpoints recursively with the new depth
+        const clusters = await findMidpointsRecursively(
           formData.word1, 
           formData.word2, 
           1, 
           newDepth
         );
+        
+        console.log(`Recalculated clusters with depth ${newDepth}:`, clusters);
         setMidpointClusters(clusters);
       } catch (error) {
         console.error('Error updating midpoint clusters:', error);
+        setError('Failed to update visualization with new recursion depth');
       } finally {
         setLoading(false);
       }
