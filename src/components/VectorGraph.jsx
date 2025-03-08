@@ -34,9 +34,39 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
         
         const serverUrl = 'http://localhost:5001'; // Adjust port if needed
         console.log('Fetching coordinates for words:', uniqueWords);
+        
+        // First get the vector coordinates for visualization
         const response = await axios.post(`${serverUrl}/api/getVectorCoordinates`, { words: uniqueWords });
         
-        setCoordinates(response.data.data);
+        // Now fetch the actual vector data for each word for the tooltips
+        const vectorPromises = uniqueWords.map(async (word) => {
+          try {
+            const vectorResponse = await axios.post(`${serverUrl}/api/submit`, { word1: word, word2: word });
+            return {
+              word,
+              vector: vectorResponse.data.data.word1.vector
+            };
+          } catch (error) {
+            console.error(`Error fetching vector for ${word}:`, error);
+            return { word, vector: null };
+          }
+        });
+        
+        const vectorResults = await Promise.all(vectorPromises);
+        const vectorMap = Object.fromEntries(
+          vectorResults.map(item => [item.word, item.vector])
+        );
+        
+        // Combine coordinate data with vector data
+        const coordinatesWithVectors = response.data.data.map(point => {
+          return {
+            ...point,
+            truncatedVector: point.isExactMidpoint ? point.truncatedVector : 
+                             vectorMap[point.word] || `Vector for ${point.word}`
+          };
+        });
+        
+        setCoordinates(coordinatesWithVectors);
       } catch (error) {
         console.error('Error fetching coordinates:', error);
         setError(error.response?.data?.error || 'Failed to get visualization data');
