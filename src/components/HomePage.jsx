@@ -89,21 +89,8 @@ const HomePage = () => {
             handleKeyDown={handleKeyDown}
             loading={loading}
           />
-          {error && (
-            <div className="error-message">
-              {error}
-            </div>
-          )}
           
-          {response && (
-            <div className="response-container">
-              <p className="response-message">{response.message}</p>
-            </div>
-          )}
-        </div>
-        
-        <div className="content-area">
-          <div className="tools-area">
+          <div className="tools-wrapper">
             <Tools
               words={words}
               serverUrl={serverUrl}
@@ -118,6 +105,20 @@ const HomePage = () => {
             />
           </div>
           
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
+          
+          {response && (
+            <div className="response-container">
+              <p className="response-message">{response.message}</p>
+            </div>
+          )}
+        </div>
+        
+        <div className="content-area">
           <div className="graph-area">
             <VectorGraph 
               words={words}
@@ -151,6 +152,14 @@ const HomePage = () => {
           padding: 1rem;
           overflow-y: auto;
           background-color: #0f172a;
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+        
+        .tools-wrapper {
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
         }
         
         .content-area {
@@ -158,11 +167,6 @@ const HomePage = () => {
           display: flex;
           flex-direction: column;
           overflow: hidden;
-        }
-        
-        .tools-area {
-          padding: 1rem;
-          background-color: #1e293b;
         }
         
         .graph-area {
@@ -179,6 +183,23 @@ const HomePage = () => {
           left: 0;
           width: 100%;
           height: 100%;
+        }
+        
+        .error-message {
+          color: #ef4444;
+          padding: 0.5rem;
+          background-color: rgba(239, 68, 68, 0.1);
+          border-radius: 4px;
+          margin-top: 0.5rem;
+        }
+        
+        .response-container {
+          margin-top: 0.5rem;
+        }
+        
+        .response-message {
+          color: #10b981;
+          font-size: 0.9rem;
         }
       `}</style>
     </div>

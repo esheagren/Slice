@@ -361,6 +361,7 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
           background-color: #0f172a;
           border-radius: 8px;
           overflow: hidden;
+          margin-top: 0; /* Remove any top margin */
         }
         
         .graph-loading, .graph-error {
