@@ -77,23 +77,6 @@ const HomePage = () => {
             handleSubmit={handleSubmit}
             loading={loading}
           />
-          
-          <div className="sidebar-controls">
-            <div className="midpoints-control">
-              <label htmlFor="num-midpoints">Cluster Size:</label>
-              <input
-                type="range"
-                id="num-midpoints"
-                min="1"
-                max="8"
-                value={numMidpoints}
-                onChange={(e) => setNumMidpoints(parseInt(e.target.value))}
-                disabled={loading}
-              />
-              <span className="midpoints-value">{numMidpoints}</span>
-            </div>
-          </div>
-          
           {error && (
             <div className="error-message">
               {error}
