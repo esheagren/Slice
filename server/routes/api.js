@@ -197,6 +197,69 @@ router.post('/getVectorCoordinates', async (req, res) => {
   }
 });
 
+// Endpoint to get nearest neighbors for a word
+router.post('/findNearestNeighbors', async (req, res) => {
+  try {
+    const { word, numNeighbors = 5 } = req.body;
+    
+    if (!word) {
+      return res.status(400).json({ error: 'Word is required' });
+    }
+    
+    // Make sure embeddings are loaded
+    await embeddingService.loadEmbeddings();
+    
+    // Check if word exists
+    if (!embeddingService.wordExists(word)) {
+      return res.status(404).json({ error: `Word "${word}" not found in vocabulary` });
+    }
+    
+    // Get vector for the word
+    const vector = embeddingService.getWordVector(word);
+    
+    // Find nearest neighbors
+    const nearestWords = embeddingService.findNearestNeighbors(vector, numNeighbors);
+    
+    res.json({
+      message: 'Nearest neighbors found successfully',
+      data: {
+        word,
+        nearestWords
+      }
+    });
+  } catch (error) {
+    console.error('Error finding nearest neighbors:', error);
+    res.status(500).json({ error: 'Failed to find nearest neighbors' });
+  }
+});
+
+// Endpoint to get random words from the database
+router.post('/getRandomWords', async (req, res) => {
+  try {
+    const { count = 20 } = req.body;
+    
+    // Make sure embeddings are loaded
+    await embeddingService.loadEmbeddings();
+    
+    // Get all words from the vocabulary
+    const allWords = Object.keys(embeddingService.wordVectors);
+    
+    // Shuffle and take the first 'count' words
+    const shuffled = [...allWords].sort(() => 0.5 - Math.random());
+    const randomWords = shuffled.slice(0, count);
+    
+    res.json({
+      message: 'Random words retrieved successfully',
+      data: {
+        words: randomWords
+      }
+    });
+  } catch (error) {
+    console.error('Error getting random words:', error);
+    res.status(500).json({ error: 'Failed to get random words' });
+  }
+});
+
 // Helper function to generate appropriate response message
 function generateResponseMessage(word1, word2, word1Exists, word2Exists) {
   if (!word1Exists && !word2Exists) {
