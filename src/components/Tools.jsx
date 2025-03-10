@@ -2,8 +2,7 @@ import React from 'react';
 import { findMidpointsRecursively } from '../utils/fetchMidpoints';
 
 const Tools = ({ 
-  word1, 
-  word2, 
+  words, 
   serverUrl,
   recursionDepth, 
   setRecursionDepth, 
@@ -22,23 +21,30 @@ const Tools = ({
     setRecursionDepth(newDepth);
     
     // If we have valid words, recalculate with new depth
-    if (wordsValid && word1 && word2) {
+    if (wordsValid && words.length >= 2) {
       setLoading(true);
       setMidpointClusters([]); // Clear existing clusters while loading
       
       try {
-        // Directly call the API to find midpoints recursively with the new depth
-        const clusters = await findMidpointsRecursively(
-          word1, 
-          word2, 
-          1, 
-          newDepth,
-          numMidpoints,
-          serverUrl
-        );
+        // Create all possible pairs of words
+        const wordPairs = createWordPairs(words);
         
-        console.log(`Recalculated clusters with depth ${newDepth}:`, clusters);
-        setMidpointClusters(clusters);
+        // Find midpoints for each pair
+        const allClusters = [];
+        for (const pair of wordPairs) {
+          const clusters = await findMidpointsRecursively(
+            pair[0], 
+            pair[1], 
+            1, 
+            newDepth,
+            numMidpoints,
+            serverUrl
+          );
+          allClusters.push(...clusters);
+        }
+        
+        console.log(`Recalculated clusters with depth ${newDepth}:`, allClusters);
+        setMidpointClusters(allClusters);
       } catch (error) {
         console.error('Error updating midpoint clusters:', error);
         setError('Failed to update visualization with new recursion depth');
@@ -54,23 +60,30 @@ const Tools = ({
     setNumMidpoints(newNumMidpoints);
     
     // If we have valid words, recalculate with new number of midpoints
-    if (wordsValid && word1 && word2) {
+    if (wordsValid && words.length >= 2) {
       setLoading(true);
       setMidpointClusters([]); // Clear existing clusters while loading
       
       try {
-        // Directly call the API to find midpoints recursively with the new number of midpoints
-        const clusters = await findMidpointsRecursively(
-          word1, 
-          word2, 
-          1, 
-          recursionDepth,
-          newNumMidpoints,
-          serverUrl
-        );
+        // Create all possible pairs of words
+        const wordPairs = createWordPairs(words);
         
-        console.log(`Recalculated clusters with ${newNumMidpoints} midpoints:`, clusters);
-        setMidpointClusters(clusters);
+        // Find midpoints for each pair
+        const allClusters = [];
+        for (const pair of wordPairs) {
+          const clusters = await findMidpointsRecursively(
+            pair[0], 
+            pair[1], 
+            1, 
+            recursionDepth,
+            newNumMidpoints,
+            serverUrl
+          );
+          allClusters.push(...clusters);
+        }
+        
+        console.log(`Recalculated clusters with ${newNumMidpoints} midpoints:`, allClusters);
+        setMidpointClusters(allClusters);
       } catch (error) {
         console.error('Error updating midpoint clusters:', error);
         setError('Failed to update visualization with new number of midpoints');
@@ -81,21 +94,29 @@ const Tools = ({
   };
 
   const handleFindMidpoints = async () => {
-    if (wordsValid && word1 && word2) {
+    if (wordsValid && words.length >= 2) {
       setLoading(true);
       setMidpointClusters([]); // Clear existing clusters while loading
       
       try {
-        const clusters = await findMidpointsRecursively(
-          word1, 
-          word2, 
-          1, 
-          recursionDepth,
-          numMidpoints,
-          serverUrl
-        );
+        // Create all possible pairs of words
+        const wordPairs = createWordPairs(words);
         
-        setMidpointClusters(clusters);
+        // Find midpoints for each pair
+        const allClusters = [];
+        for (const pair of wordPairs) {
+          const clusters = await findMidpointsRecursively(
+            pair[0], 
+            pair[1], 
+            1, 
+            recursionDepth,
+            numMidpoints,
+            serverUrl
+          );
+          allClusters.push(...clusters);
+        }
+        
+        setMidpointClusters(allClusters);
       } catch (error) {
         console.error('Error finding midpoints:', error);
         setError('Failed to find midpoints between the words');
@@ -103,6 +124,17 @@ const Tools = ({
         setLoading(false);
       }
     }
+  };
+
+  // Helper function to create all possible pairs of words
+  const createWordPairs = (wordsList) => {
+    const pairs = [];
+    for (let i = 0; i < wordsList.length; i++) {
+      for (let j = i + 1; j < wordsList.length; j++) {
+        pairs.push([wordsList[i], wordsList[j]]);
+      }
+    }
+    return pairs;
   };
 
   return (
@@ -113,7 +145,7 @@ const Tools = ({
         <button 
           className="tool-button" 
           onClick={handleFindMidpoints} 
-          disabled={!wordsValid || loading}
+          disabled={!wordsValid || words.length < 2 || loading}
         >
           Find Midpoints
         </button>
@@ -130,7 +162,7 @@ const Tools = ({
             max="8"
             value={numMidpoints}
             onChange={handleNumMidpointsChange}
-            disabled={!wordsValid || loading}
+            disabled={!wordsValid || words.length < 2 || loading}
           />
           <span className="midpoints-value">{numMidpoints}</span>
         </div>
@@ -144,7 +176,7 @@ const Tools = ({
             max="3"
             value={recursionDepth}
             onChange={handleRecursionDepthChange}
-            disabled={!wordsValid || loading}
+            disabled={!wordsValid || words.length < 2 || loading}
           />
           <span className="depth-value">{recursionDepth}</span>
         </div>

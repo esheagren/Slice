@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 
-const VectorGraph = ({ word1, word2, midpointWords }) => {
+const VectorGraph = ({ words, midpointWords, recursionDepth, numMidpoints, serverUrl = 'http://localhost:5001' }) => {
   const [coordinates, setCoordinates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -9,7 +9,7 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
   const containerRef = useRef(null);
   
   useEffect(() => {
-    if (!word1 || !word2) return;
+    if (!words || words.length === 0) return;
     
     const fetchCoordinates = async () => {
       setLoading(true);
@@ -17,7 +17,7 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
       
       try {
         // Create array of all words to visualize
-        const words = [word1, word2];
+        const allWords = [...words];
         
         // Add midpoint words if available - only if midpointWords has content
         // This means the Find Midpoints button was clicked
@@ -27,15 +27,14 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
           // Add all words from all midpoint clusters
           midpointWords.forEach(cluster => {
             if (cluster && cluster.words) {
-              words.push(...cluster.words.map(item => item.word));
+              allWords.push(...cluster.words.map(item => item.word));
             }
           });
         }
         
         // Make sure we have unique words only
-        const uniqueWords = [...new Set(words)];
+        const uniqueWords = [...new Set(allWords)];
         
-        const serverUrl = 'http://localhost:5001'; // Adjust port if needed
         console.log('Fetching coordinates for words:', uniqueWords);
         
         // First get the vector coordinates for visualization
@@ -83,7 +82,7 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
     };
     
     fetchCoordinates();
-  }, [word1, word2, midpointWords]);
+  }, [words, midpointWords, serverUrl]);
   
   // Set up canvas size based on container
   useEffect(() => {
@@ -193,111 +192,40 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
     
     ctx.stroke();
     
-    // Find the points for word1, word2, and midpoint
-    const word1Point = coordinates.find(p => p.word === word1);
-    const word2Point = coordinates.find(p => p.word === word2);
-    const exactMidpointPoint = coordinates.find(p => p.isExactMidpoint);
-    
-    // Draw lines connecting the points
-    if (word1Point && word2Point) {
-      ctx.beginPath();
-      ctx.strokeStyle = '#64748b';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 2]);
-      
-      // Only draw lines through midpoint if exactMidpointPoint exists
-      if (exactMidpointPoint) {
-        ctx.moveTo(toCanvasX(word1Point.x), toCanvasY(word1Point.y));
-        ctx.lineTo(toCanvasX(exactMidpointPoint.x), toCanvasY(exactMidpointPoint.y));
-        ctx.lineTo(toCanvasX(word2Point.x), toCanvasY(word2Point.y));
-      } else {
-        // Direct line if no midpoint or if midpoints haven't been requested
-        ctx.moveTo(toCanvasX(word1Point.x), toCanvasY(word1Point.y));
-        ctx.lineTo(toCanvasX(word2Point.x), toCanvasY(word2Point.y));
-      }
-      
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-    
-    // Draw additional lines for recursive midpoints if they exist
-    if (midpointWords && midpointWords.length > 0 && exactMidpointPoint) {
-      // Draw lines for primary midpoint cluster
-      const primaryMidpointWords = midpointWords[0]?.words || [];
-      if (primaryMidpointWords.length > 0 && word1Point && word2Point) {
-        ctx.beginPath();
-        ctx.strokeStyle = '#34A853'; // Green for primary midpoint connections
-        ctx.lineWidth = 0.8;
-        ctx.setLineDash([2, 2]);
-        
-        primaryMidpointWords.forEach(item => {
-          const point = coordinates.find(p => p.word === item.word);
-          if (point) {
-            ctx.moveTo(toCanvasX(exactMidpointPoint.x), toCanvasY(exactMidpointPoint.y));
-            ctx.lineTo(toCanvasX(point.x), toCanvasY(point.y));
+    // Draw lines connecting the points if midpoints are available
+    if (midpointWords && midpointWords.length > 0) {
+      midpointWords.forEach(cluster => {
+        if (cluster && cluster.parent1 && cluster.parent2) {
+          const parent1Point = coordinates.find(p => p.word === cluster.parent1);
+          const parent2Point = coordinates.find(p => p.word === cluster.parent2);
+          const exactMidpointPoint = coordinates.find(p => 
+            p.isExactMidpoint && 
+            p.parent1 === cluster.parent1 && 
+            p.parent2 === cluster.parent2
+          );
+          
+          if (parent1Point && parent2Point) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 2]);
+            
+            // Only draw lines through midpoint if exactMidpointPoint exists
+            if (exactMidpointPoint) {
+              ctx.moveTo(toCanvasX(parent1Point.x), toCanvasY(parent1Point.y));
+              ctx.lineTo(toCanvasX(exactMidpointPoint.x), toCanvasY(exactMidpointPoint.y));
+              ctx.lineTo(toCanvasX(parent2Point.x), toCanvasY(parent2Point.y));
+            } else {
+              // Direct line if no midpoint
+              ctx.moveTo(toCanvasX(parent1Point.x), toCanvasY(parent1Point.y));
+              ctx.lineTo(toCanvasX(parent2Point.x), toCanvasY(parent2Point.y));
+            }
+            
+            ctx.stroke();
+            ctx.setLineDash([]);
           }
-        });
-        
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-      
-      // Draw lines for secondary midpoint clusters if they exist
-      if (midpointWords.length > 1) {
-        // Secondary midpoint between word1 and primary midpoint
-        const secondaryMidpoint1Words = midpointWords[1]?.words || [];
-        if (secondaryMidpoint1Words.length > 0 && word1Point && exactMidpointPoint) {
-          ctx.beginPath();
-          ctx.strokeStyle = '#4285F4'; // Blue for secondary midpoint connections
-          ctx.lineWidth = 0.8;
-          ctx.setLineDash([2, 2]);
-          
-          // Find the secondary midpoint center (between word1 and exactMidpoint)
-          const secondaryMidpoint1Center = {
-            x: (word1Point.x + exactMidpointPoint.x) / 2,
-            y: (word1Point.y + exactMidpointPoint.y) / 2
-          };
-          
-          secondaryMidpoint1Words.forEach(item => {
-            const point = coordinates.find(p => p.word === item.word);
-            if (point) {
-              ctx.moveTo(toCanvasX(secondaryMidpoint1Center.x), 
-                         toCanvasY(secondaryMidpoint1Center.y));
-              ctx.lineTo(toCanvasX(point.x), toCanvasY(point.y));
-            }
-          });
-          
-          ctx.stroke();
-          ctx.setLineDash([]);
         }
-        
-        // Secondary midpoint between word2 and primary midpoint
-        const secondaryMidpoint2Words = midpointWords[2]?.words || [];
-        if (secondaryMidpoint2Words.length > 0 && word2Point && exactMidpointPoint) {
-          ctx.beginPath();
-          ctx.strokeStyle = '#EA4335'; // Red for secondary midpoint connections
-          ctx.lineWidth = 0.8;
-          ctx.setLineDash([2, 2]);
-          
-          // Find the secondary midpoint center (between word2 and exactMidpoint)
-          const secondaryMidpoint2Center = {
-            x: (word2Point.x + exactMidpointPoint.x) / 2,
-            y: (word2Point.y + exactMidpointPoint.y) / 2
-          };
-          
-          secondaryMidpoint2Words.forEach(item => {
-            const point = coordinates.find(p => p.word === item.word);
-            if (point) {
-              ctx.moveTo(toCanvasX(secondaryMidpoint2Center.x), 
-                         toCanvasY(secondaryMidpoint2Center.y));
-              ctx.lineTo(toCanvasX(point.x), toCanvasY(point.y));
-            }
-          });
-          
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
-      }
+      });
     }
     
     // Store point coordinates for hover detection
@@ -312,7 +240,7 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
       points.push({
         x, 
         y, 
-        radius: point.isExactMidpoint ? 10 : (point.word === word1 || point.word === word2 ? 8 : 6),
+        radius: point.isExactMidpoint ? 10 : (words.includes(point.word) ? 8 : 6),
         word: point.word,
         truncatedVector: point.truncatedVector
       });
@@ -321,15 +249,15 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
       ctx.beginPath();
       
       // Different colors for different types of words
-      if (point.word === word1) {
-        ctx.fillStyle = '#4285F4'; // Blue for word1
-        ctx.arc(x, y, 8, 0, Math.PI * 2);
-      } else if (point.word === word2) {
-        ctx.fillStyle = '#EA4335'; // Red for word2
+      if (words.includes(point.word)) {
+        // Use a color based on the index in the words array
+        const colors = ['#4285F4', '#EA4335', '#FBBC05', '#34A853', '#9C27B0', '#FF9800', '#00BCD4'];
+        const colorIndex = words.indexOf(point.word) % colors.length;
+        ctx.fillStyle = colors[colorIndex];
         ctx.arc(x, y, 8, 0, Math.PI * 2);
       } else if (point.isExactMidpoint) {
         ctx.fillStyle = '#FBBC05'; // Yellow for the exact midpoint
-        ctx.arc(x, y, 1, 0, Math.PI * 2); // Slightly larger for emphasis
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
       } else {
         // Find which cluster this word belongs to
         let clusterIndex = -1;
@@ -479,18 +407,21 @@ const VectorGraph = ({ word1, word2, midpointWords }) => {
         <>
           <canvas ref={canvasRef} className="vector-canvas" />
           <div className="graph-legend">
-            <div className="legend-item">
-              <span className="legend-color" style={{backgroundColor: '#4285F4'}}></span>
-              <span className="legend-label">{word1}</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-color" style={{backgroundColor: '#EA4335'}}></span>
-              <span className="legend-label">{word2}</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-color" style={{backgroundColor: '#34A853'}}></span>
-              <span className="legend-label">Related Words</span>
-            </div>
+            {words.map((word, index) => {
+              const colors = ['#4285F4', '#EA4335', '#FBBC05', '#34A853', '#9C27B0', '#FF9800', '#00BCD4'];
+              return (
+                <div key={index} className="legend-item">
+                  <span className="legend-color" style={{backgroundColor: colors[index % colors.length]}}></span>
+                  <span className="legend-label">{word}</span>
+                </div>
+              );
+            })}
+            {midpointWords && midpointWords.length > 0 && (
+              <div className="legend-item">
+                <span className="legend-color" style={{backgroundColor: '#34A853'}}></span>
+                <span className="legend-label">Related Words</span>
+              </div>
+            )}
           </div>
         </>
       )}

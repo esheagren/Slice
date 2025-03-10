@@ -6,10 +6,7 @@ import Tools from './Tools';
 import { findMidpointsRecursively } from '../utils/fetchMidpoints';
 
 const HomePage = () => {
-  const [formData, setFormData] = useState({
-    word1: '',
-    word2: ''
-  });
+  const [words, setWords] = useState([]);
   const [response, setResponse] = useState(null);
   const [midpointClusters, setMidpointClusters] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -18,14 +15,6 @@ const HomePage = () => {
   const [serverUrl, setServerUrl] = useState('http://localhost:5001');
   const [numMidpoints, setNumMidpoints] = useState(5); // Default to 5 midpoints
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
-
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -33,16 +22,50 @@ const HomePage = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
+    
+    if (words.length === 0) return;
+    
     setLoading(true);
     setError(null);
     
     try {
-      const response = await axios.post(`${serverUrl}/api/submit`, formData);
-      console.log('Form submitted successfully:', response.data);
-      setResponse(response.data);
+      // Create an array of promises for each word
+      const wordPromises = words.map(word => 
+        axios.post(`${serverUrl}/api/submit`, { word1: word, word2: word })
+      );
       
-      // Removed the automatic midpoint fetching code that was here
+      // Wait for all requests to complete
+      const responses = await Promise.all(wordPromises);
+      
+      // Process responses to check if all words exist
+      const wordResults = responses.map((response, index) => ({
+        word: words[index],
+        exists: response.data.data.word1.exists,
+        vector: response.data.data.word1.vector
+      }));
+      
+      // Check if any words don't exist
+      const nonExistingWords = wordResults.filter(result => !result.exists)
+                                         .map(result => result.word);
+      
+      let message = '';
+      if (nonExistingWords.length > 0) {
+        if (nonExistingWords.length === words.length) {
+          message = `None of the words were found in the embeddings.`;
+        } else {
+          message = `The following words were not found in the embeddings: ${nonExistingWords.join(', ')}`;
+        }
+      } else {
+        message = `All words found! Vectors retrieved successfully.`;
+      }
+      
+      setResponse({
+        message,
+        data: {
+          words: wordResults
+        }
+      });
       
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -62,8 +85,8 @@ const HomePage = () => {
       <div className="main-layout">
         <div className="sidebar">
           <WordInput 
-            formData={formData}
-            handleChange={handleChange}
+            words={words}
+            setWords={setWords}
             handleSubmit={handleSubmit}
             handleKeyDown={handleKeyDown}
             loading={loading}
@@ -84,8 +107,7 @@ const HomePage = () => {
         <div className="content-area">
           <div className="tools-area">
             <Tools
-              word1={formData.word1}
-              word2={formData.word2}
+              words={words}
               serverUrl={serverUrl}
               recursionDepth={recursionDepth}
               setRecursionDepth={setRecursionDepth}
@@ -95,18 +117,18 @@ const HomePage = () => {
               setLoading={setLoading}
               setError={setError}
               loading={loading}
-              wordsValid={response && response.data && response.data.word1 && response.data.word2 && 
-                         response.data.word1.exists && response.data.word2.exists}
+              wordsValid={response && response.data && response.data.words && 
+                         response.data.words.some(word => word.exists)}
             />
           </div>
           
           <div className="graph-area">
             <VectorGraph 
-              word1={formData.word1}
-              word2={formData.word2}
+              words={words}
               midpointWords={midpointClusters}
               recursionDepth={recursionDepth}
               numMidpoints={numMidpoints}
+              serverUrl={serverUrl}
             />
           </div>
         </div>

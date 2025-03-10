@@ -118,7 +118,7 @@ router.post('/findMidpointWords', async (req, res) => {
 // Endpoint to get 2D coordinates for visualization
 router.post('/getVectorCoordinates', async (req, res) => {
   try {
-    const { words } = req.body;
+    const { words, calculateMidpoint } = req.body;
     
     if (!words || !Array.isArray(words) || words.length === 0) {
       return res.status(400).json({ error: 'Invalid words array' });
@@ -144,20 +144,29 @@ router.post('/getVectorCoordinates', async (req, res) => {
       });
     }
     
-    // Find word1 and word2 in the vectors array
-    const word1Item = vectors.find(item => item.word === words[0]);
-    const word2Item = vectors.find(item => item.word === words[1]);
-    
-    // Calculate and add exact midpoint if both words exist
-    if (word1Item && word2Item) {
-      const midpointVector = embeddingService.calculateMidpoint(word1Item.vector, word2Item.vector);
-      vectors.push({
-        word: 'exactMidpoint',
-        vector: midpointVector,
-        isExactMidpoint: true,
-        // Add truncated vector for midpoint too
-        truncatedVector: `[${midpointVector.slice(0, 5).join(', ')}...]`
-      });
+    // Calculate midpoints between all pairs of words if requested
+    if (calculateMidpoint && vectors.length >= 2) {
+      // Create all possible pairs of words
+      for (let i = 0; i < vectors.length - 1; i++) {
+        for (let j = i + 1; j < vectors.length; j++) {
+          const word1 = vectors[i];
+          const word2 = vectors[j];
+          
+          // Skip if either word is already a midpoint
+          if (word1.isExactMidpoint || word2.isExactMidpoint) continue;
+          
+          const midpointVector = embeddingService.calculateMidpoint(word1.vector, word2.vector);
+          vectors.push({
+            word: `midpoint_${word1.word}_${word2.word}`,
+            vector: midpointVector,
+            isExactMidpoint: true,
+            parent1: word1.word,
+            parent2: word2.word,
+            // Add truncated vector for midpoint
+            truncatedVector: `[${midpointVector.slice(0, 5).join(', ')}...]`
+          });
+        }
+      }
     }
     
     // Extract just the vectors for PCA
@@ -172,7 +181,9 @@ router.post('/getVectorCoordinates', async (req, res) => {
       x: coordinates2D[index][0],
       y: coordinates2D[index][1],
       isExactMidpoint: item.isExactMidpoint || false,
-      truncatedVector: item.truncatedVector // Include truncated vector in response
+      parent1: item.parent1,
+      parent2: item.parent2,
+      truncatedVector: item.truncatedVector || `[${item.vector.slice(0, 5).join(', ')}...]`
     }));
     
     res.json({
