@@ -61,14 +61,17 @@ const router = express.Router();
 //   }
 // });
 
-// Endpoint to get 2D coordinates for visualization
+// Endpoint to get vector coordinates for visualization
 router.post('/getVectorCoordinates', async (req, res) => {
   try {
-    const { words } = req.body;
+    const { words, dimensions = 2 } = req.body;
     
     if (!words || !Array.isArray(words) || words.length === 0) {
       return res.status(400).json({ error: 'Invalid words array' });
     }
+    
+    // Validate dimensions
+    const projectionDimensions = dimensions === 3 ? 3 : 2;
     
     // Get vectors for all words
     const vectors = [];
@@ -93,20 +96,33 @@ router.post('/getVectorCoordinates', async (req, res) => {
     // Extract just the vectors for PCA
     const vectorsOnly = vectors.map(item => item.vector);
     
-    // Perform PCA to get 2D coordinates
-    const coordinates2D = performPCA(vectorsOnly);
+    // Perform PCA to get coordinates
+    const coordinates = performPCA(vectorsOnly, projectionDimensions);
     
-    // Combine words with their 2D coordinates
-    const result = vectors.map((item, index) => ({
-      word: item.word,
-      x: coordinates2D[index][0],
-      y: coordinates2D[index][1],
-      truncatedVector: `[${item.vector.slice(0, 5).join(', ')}...]`
-    }));
+    // Combine words with their coordinates
+    const result = vectors.map((item, index) => {
+      const point = {
+        word: item.word,
+        truncatedVector: `[${item.vector.slice(0, 5).join(', ')}...]`
+      };
+      
+      // Add coordinates based on dimensions
+      if (projectionDimensions === 2) {
+        point.x = coordinates[index][0];
+        point.y = coordinates[index][1];
+      } else {
+        point.x = coordinates[index][0];
+        point.y = coordinates[index][1];
+        point.z = coordinates[index][2];
+      }
+      
+      return point;
+    });
     
     res.json({
-      message: 'Vector coordinates calculated successfully',
+      message: `Vector coordinates calculated successfully in ${projectionDimensions}D`,
       data: result,
+      dimensions: projectionDimensions,
       invalidWords: invalidWords.length > 0 ? invalidWords : undefined
     });
   } catch (error) {

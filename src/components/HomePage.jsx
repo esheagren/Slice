@@ -12,6 +12,7 @@ const HomePage = () => {
   const [error, setError] = useState(null);
   const [serverUrl, setServerUrl] = useState('http://localhost:5001');
   const [numNeighbors, setNumNeighbors] = useState(5); // Default to 5 neighbors
+  const [viewMode, setViewMode] = useState('2D'); // Default to 2D view
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -102,6 +103,8 @@ const HomePage = () => {
               loading={loading}
               wordsValid={response && response.data && response.data.words && 
                          response.data.words.some(word => word.exists)}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
             />
           </div>
           
@@ -125,6 +128,7 @@ const HomePage = () => {
               midpointWords={relatedClusters}
               numMidpoints={numNeighbors}
               serverUrl={serverUrl}
+              viewMode={viewMode}
             />
           </div>
         </div>

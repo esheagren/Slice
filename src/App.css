@@ -211,3 +211,91 @@ body {
     height: 60%;
   }
 }
+
+/* 3D/2D toggle animation */
+.view-mode-toggle {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+  margin-right: 10px;
+}
+
+.view-mode-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #334155;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #4285F4;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(26px);
+}
+
+.toggle-label {
+  margin-left: 10px;
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+/* 3D point tooltip */
+#vector-tooltip {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  background-color: rgba(15, 23, 42, 0.95);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  max-width: 300px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid #334155;
+}
+
+/* View mode transition */
+.view-transition {
+  transition: opacity 0.3s ease-in-out, transform 0.5s ease-in-out;
+}
+
+@keyframes viewTransition {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) rotateY(0deg);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1) rotateY(90deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotateY(0deg);
+  }
+}

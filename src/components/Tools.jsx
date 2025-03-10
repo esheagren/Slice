@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const Tools = ({ 
   words, 
@@ -8,7 +8,9 @@ const Tools = ({
   setLoading,
   setError,
   loading,
-  wordsValid
+  wordsValid,
+  viewMode,
+  setViewMode
 }) => {
   
   // Add this new function to handle the Add Neighbors button click
@@ -37,15 +39,21 @@ const Tools = ({
       }
     }
   };
+  
+  // Toggle between 2D and 3D view modes
+  const toggleViewMode = () => {
+    setViewMode(viewMode === '2D' ? '3D' : '2D');
+  };
 
   return (
     <div className="tools-container">
       <div className="tools-row primary-tools">
         <button 
           className="tool-button" 
+          onClick={toggleViewMode}
           disabled={!wordsValid || loading}
         >
-          2D/3D
+          {viewMode === '2D' ? '3D View' : '2D View'}
         </button>
         <button 
           className="tool-button" 
