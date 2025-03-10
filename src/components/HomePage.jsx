@@ -79,20 +79,6 @@ const HomePage = () => {
           />
           
           <div className="sidebar-controls">
-            <div className="recursion-control">
-              <label htmlFor="recursion-depth">Midpoint Recursion Depth:</label>
-              <input
-                type="range"
-                id="recursion-depth"
-                min="1"
-                max="3"
-                value={recursionDepth}
-                onChange={(e) => setRecursionDepth(parseInt(e.target.value))}
-                disabled={loading}
-              />
-              <span className="depth-value">{recursionDepth}</span>
-            </div>
-            
             <div className="midpoints-control">
               <label htmlFor="num-midpoints">Cluster Size:</label>
               <input
@@ -117,27 +103,6 @@ const HomePage = () => {
           {response && (
             <div className="response-container">
               <p className="response-message">{response.message}</p>
-              
-              {response.data.word1.exists && (
-                <div className="word-info">
-                  <h4>"{formData.word1}" vector:</h4>
-                  <p className="vector-preview">{response.data.word1.vector}</p>
-                </div>
-              )}
-              
-              {response.data.word2.exists && (
-                <div className="word-info">
-                  <h4>"{formData.word2}" vector:</h4>
-                  <p className="vector-preview">{response.data.word2.vector}</p>
-                </div>
-              )}
-              
-              {response.data.midpoint && (
-                <div className="word-info">
-                  <h4>Midpoint vector:</h4>
-                  <p className="vector-preview">{response.data.midpoint}</p>
-                </div>
-              )}
             </div>
           )}
         </div>
