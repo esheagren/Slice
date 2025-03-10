@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import VectorGraph from './VectorGraph';
 import WordInput from './WordInput';
+import Tools from './Tools';
+import { findMidpointsRecursively } from '../utils/fetchMidpoints';
 
 const HomePage = () => {
   const [formData, setFormData] = useState({
@@ -28,147 +30,36 @@ const HomePage = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setMidpointClusters([]);
     
     try {
       const response = await axios.post(`${serverUrl}/api/submit`, formData);
       console.log('Form submitted successfully:', response.data);
       setResponse(response.data);
       
-      // If both words exist, find midpoints recursively
+      // After successful form submission, also fetch the midpoints
+      // This ensures the graph has data to display
       if (response.data.data.word1.exists && response.data.data.word2.exists) {
-        const clusters = await findMidpointsRecursively(
-          formData.word1, 
-          formData.word2, 
-          1, 
-          recursionDepth
-        );
-        
-        setMidpointClusters(clusters);
+        try {
+          const clusters = await findMidpointsRecursively(
+            formData.word1,
+            formData.word2,
+            1,
+            recursionDepth,
+            numMidpoints,
+            serverUrl
+          );
+          setMidpointClusters(clusters);
+        } catch (midpointError) {
+          console.error('Error finding initial midpoints:', midpointError);
+          // Don't set error here to avoid overriding the success message
+        }
       }
     } catch (error) {
       console.error('Error submitting form:', error);
       setError(error.response?.data?.error || 'An error occurred while processing your request');
+      setMidpointClusters([]); // Only clear on error
     } finally {
       setLoading(false);
-    }
-  };
-  
-  const findMidpointsRecursively = async (word1, word2, depth = 1, maxDepth = recursionDepth) => {
-    if (depth > maxDepth) return [];
-    
-    try {
-      // Find midpoint words between word1 and word2
-      const result = await axios.post(`${serverUrl}/api/findMidpointWords`, {
-        word1: word1,
-        word2: word2,
-        numNeighbors: numMidpoints // Use the user-selected number of midpoints
-      });
-      
-      console.log(`Midpoint words found between ${word1} and ${word2}:`, result.data);
-      
-      // Create a cluster for this midpoint
-      const cluster = {
-        level: depth,
-        parent1: word1,
-        parent2: word2,
-        words: result.data.data.nearestWords
-      };
-      
-      // Create an array to hold all clusters (starting with this one)
-      const allClusters = [cluster];
-      
-      // If we haven't reached max depth, recursively find more midpoints
-      if (depth < maxDepth) {
-        // Get the primary midpoint word (first word in the nearest words)
-        const primaryMidpointWord = result.data.data.nearestWords[0].word;
-        
-        // Find midpoints between word1 and the primary midpoint
-        const subClusters1 = await findMidpointsRecursively(
-          word1, 
-          primaryMidpointWord, 
-          depth + 1, 
-          maxDepth
-        );
-        
-        // Find midpoints between word2 and the primary midpoint
-        const subClusters2 = await findMidpointsRecursively(
-          word2, 
-          primaryMidpointWord, 
-          depth + 1, 
-          maxDepth
-        );
-        
-        // Add all subclusters to our result
-        allClusters.push(...subClusters1, ...subClusters2);
-      }
-      
-      return allClusters;
-    } catch (error) {
-      console.error(`Error finding midpoints recursively at depth ${depth}:`, error);
-      return [];
-    }
-  };
-  
-  // Handle recursion depth change
-  const handleRecursionDepthChange = async (e) => {
-    const newDepth = parseInt(e.target.value);
-    setRecursionDepth(newDepth);
-    
-    // If we have valid words, recalculate with new depth
-    if (formData.word1 && formData.word2 && 
-        response?.data?.word1?.exists && response?.data?.word2?.exists) {
-      setLoading(true);
-      setMidpointClusters([]); // Clear existing clusters while loading
-      
-      try {
-        // Directly call the API to find midpoints recursively with the new depth
-        const clusters = await findMidpointsRecursively(
-          formData.word1, 
-          formData.word2, 
-          1, 
-          newDepth
-        );
-        
-        console.log(`Recalculated clusters with depth ${newDepth}:`, clusters);
-        setMidpointClusters(clusters);
-      } catch (error) {
-        console.error('Error updating midpoint clusters:', error);
-        setError('Failed to update visualization with new recursion depth');
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  // Handle number of midpoints change
-  const handleNumMidpointsChange = async (e) => {
-    const newNumMidpoints = parseInt(e.target.value);
-    setNumMidpoints(newNumMidpoints);
-    
-    // If we have valid words, recalculate with new number of midpoints
-    if (formData.word1 && formData.word2 && 
-        response?.data?.word1?.exists && response?.data?.word2?.exists) {
-      setLoading(true);
-      setMidpointClusters([]); // Clear existing clusters while loading
-      
-      try {
-        // Directly call the API to find midpoints recursively with the new number of midpoints
-        const clusters = await findMidpointsRecursively(
-          formData.word1, 
-          formData.word2, 
-          1, 
-          recursionDepth
-        );
-        
-        console.log(`Recalculated clusters with ${newNumMidpoints} midpoints:`, clusters);
-        setMidpointClusters(clusters);
-      } catch (error) {
-        console.error('Error updating midpoint clusters:', error);
-        setError('Failed to update visualization with new number of midpoints');
-      } finally {
-        setLoading(false);
-      }
     }
   };
 
@@ -187,37 +78,35 @@ const HomePage = () => {
             loading={loading}
           />
           
-          {response && response.data.word1.exists && response.data.word2.exists && (
-            <div className="controls-container">
-              <div className="recursion-control">
-                <label htmlFor="recursion-depth">Midpoint Recursion Depth:</label>
-                <input
-                  type="range"
-                  id="recursion-depth"
-                  min="1"
-                  max="3"
-                  value={recursionDepth}
-                  onChange={handleRecursionDepthChange}
-                  disabled={loading}
-                />
-                <span className="depth-value">{recursionDepth}</span>
-              </div>
-              
-              <div className="midpoints-control">
-                <label htmlFor="num-midpoints">Cluster Size:</label>
-                <input
-                  type="range"
-                  id="num-midpoints"
-                  min="1"
-                  max="8"
-                  value={numMidpoints}
-                  onChange={handleNumMidpointsChange}
-                  disabled={loading}
-                />
-                <span className="midpoints-value">{numMidpoints}</span>
-              </div>
+          <div className="sidebar-controls">
+            <div className="recursion-control">
+              <label htmlFor="recursion-depth">Midpoint Recursion Depth:</label>
+              <input
+                type="range"
+                id="recursion-depth"
+                min="1"
+                max="3"
+                value={recursionDepth}
+                onChange={(e) => setRecursionDepth(parseInt(e.target.value))}
+                disabled={loading}
+              />
+              <span className="depth-value">{recursionDepth}</span>
             </div>
-          )}
+            
+            <div className="midpoints-control">
+              <label htmlFor="num-midpoints">Cluster Size:</label>
+              <input
+                type="range"
+                id="num-midpoints"
+                min="1"
+                max="8"
+                value={numMidpoints}
+                onChange={(e) => setNumMidpoints(parseInt(e.target.value))}
+                disabled={loading}
+              />
+              <span className="midpoints-value">{numMidpoints}</span>
+            </div>
+          </div>
           
           {error && (
             <div className="error-message">
@@ -253,16 +142,89 @@ const HomePage = () => {
           )}
         </div>
         
-        <div className="graph-area">
-          <VectorGraph 
-            word1={formData.word1}
-            word2={formData.word2}
-            midpointWords={midpointClusters}
-            recursionDepth={recursionDepth}
-            numMidpoints={numMidpoints}
-          />
+        <div className="content-area">
+          <div className="tools-area">
+            <Tools
+              word1={formData.word1}
+              word2={formData.word2}
+              serverUrl={serverUrl}
+              recursionDepth={recursionDepth}
+              setRecursionDepth={setRecursionDepth}
+              numMidpoints={numMidpoints}
+              setNumMidpoints={setNumMidpoints}
+              setMidpointClusters={setMidpointClusters}
+              setLoading={setLoading}
+              setError={setError}
+              loading={loading}
+              wordsValid={response && response.data && response.data.word1 && response.data.word2 && 
+                         response.data.word1.exists && response.data.word2.exists}
+            />
+          </div>
+          
+          <div className="graph-area">
+            <VectorGraph 
+              word1={formData.word1}
+              word2={formData.word2}
+              midpointWords={midpointClusters}
+              recursionDepth={recursionDepth}
+              numMidpoints={numMidpoints}
+            />
+          </div>
         </div>
       </div>
+      
+      <style jsx>{`
+        .app-container {
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+        }
+        
+        .header {
+          padding: 1rem;
+        }
+        
+        .main-layout {
+          display: flex;
+          flex: 1;
+          overflow: hidden;
+        }
+        
+        .sidebar {
+          width: 300px;
+          padding: 1rem;
+          overflow-y: auto;
+          background-color: #0f172a;
+        }
+        
+        .content-area {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        
+        .tools-area {
+          padding: 1rem;
+          background-color: #1e293b;
+        }
+        
+        .graph-area {
+          flex: 1;
+          min-height: 500px; /* Ensure minimum height */
+          position: relative;
+          overflow: hidden;
+        }
+        
+        /* Make sure the VectorGraph component fills its container */
+        .graph-area > div {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+        }
+      `}</style>
     </div>
   );
 };
