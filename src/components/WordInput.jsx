@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 const WordInput = ({ words, setWords, handleSubmit, handleKeyDown, loading }) => {
   const [newWord, setNewWord] = useState('');
+  const inputRef = useRef(null);
 
   const handleNewWordChange = (e) => {
     setNewWord(e.target.value);
@@ -20,6 +21,25 @@ const WordInput = ({ words, setWords, handleSubmit, handleKeyDown, loading }) =>
       }
     }
   };
+
+  // Focus the input field when the component mounts
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
+  // Maintain focus after any state changes
+  useEffect(() => {
+    const focusInput = () => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    };
+    
+    // Use requestAnimationFrame to ensure focus happens after DOM updates
+    requestAnimationFrame(focusInput);
+  }, [words, newWord, loading]);
 
   const removeWord = (indexToRemove) => {
     const updatedWords = words.filter((_, index) => index !== indexToRemove);
@@ -49,6 +69,7 @@ const WordInput = ({ words, setWords, handleSubmit, handleKeyDown, loading }) =>
       
       <div className="input-row">
         <input
+          ref={inputRef}
           type="text"
           id="newWord"
           name="newWord"
@@ -57,6 +78,7 @@ const WordInput = ({ words, setWords, handleSubmit, handleKeyDown, loading }) =>
           onKeyDown={handleNewWordKeyDown}
           placeholder={words.length === 0 ? "Enter words (press Enter after each)" : "Add another word"}
           disabled={loading}
+          autoFocus
         />
       </div>
       
