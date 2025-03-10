@@ -1,6 +1,6 @@
 import React from 'react';
 
-const WordInput = ({ formData, handleChange, handleSubmit, loading }) => {
+const WordInput = ({ formData, handleChange, handleSubmit, handleKeyDown, loading }) => {
   return (
     <div className="word-input-container">
       <form onSubmit={handleSubmit}>
@@ -12,6 +12,7 @@ const WordInput = ({ formData, handleChange, handleSubmit, loading }) => {
             name="word1"
             value={formData.word1}
             onChange={handleChange}
+            onKeyDown={handleKeyDown}
             placeholder="Enter first word"
             required
           />
@@ -25,6 +26,7 @@ const WordInput = ({ formData, handleChange, handleSubmit, loading }) => {
             name="word2"
             value={formData.word2}
             onChange={handleChange}
+            onKeyDown={handleKeyDown}
             placeholder="Enter second word"
             required
           />

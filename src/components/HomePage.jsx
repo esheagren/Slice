@@ -26,6 +26,12 @@ const HomePage = () => {
     });
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -59,6 +65,7 @@ const HomePage = () => {
             formData={formData}
             handleChange={handleChange}
             handleSubmit={handleSubmit}
+            handleKeyDown={handleKeyDown}
             loading={loading}
           />
           {error && (
