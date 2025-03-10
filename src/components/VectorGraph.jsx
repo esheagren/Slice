@@ -88,9 +88,9 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
       const container = containerRef.current;
       const canvas = canvasRef.current;
       
-      // Make canvas fill the container
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight;
+      // Make canvas fill the container with padding
+      canvas.width = container.clientWidth - 40; // 20px padding on each side
+      canvas.height = container.clientHeight - 40; // 20px padding on each side
       
       // Redraw if we have data
       if (coordinates.length > 0) {
@@ -135,157 +135,114 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
       maxY = Math.max(maxY, point.y);
     });
     
-    // Add some padding
-    const padding = 60;
-    const scaleX = (width - 2 * padding) / (maxX - minX || 1);
-    const scaleY = (height - 2 * padding) / (maxY - minY || 1);
+    // Add some padding to the graph area (20% of the range)
+    const paddingX = (maxX - minX) * 0.2;
+    const paddingY = (maxY - minY) * 0.2;
+    
+    minX -= paddingX;
+    maxX += paddingX;
+    minY -= paddingY;
+    maxY += paddingY;
+    
+    // Scale factors for converting data coordinates to canvas coordinates
+    const scaleX = width / (maxX - minX);
+    const scaleY = height / (maxY - minY);
     
     // Function to convert data coordinates to canvas coordinates
-    const toCanvasX = x => padding + (x - minX) * scaleX;
-    const toCanvasY = y => height - padding - (y - minY) * scaleY; // Flip Y axis
+    const toCanvasX = x => (x - minX) * scaleX;
+    const toCanvasY = y => height - (y - minY) * scaleY; // Flip Y axis
     
-    // Draw coordinate axes and grid
-    ctx.beginPath();
-    ctx.strokeStyle = '#334155';
-    ctx.lineWidth = 0.5;
+    // Draw axes (optional)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
     
     // Draw grid lines
-    const gridCount = 8;
-    const xStep = (maxX - minX) / gridCount;
-    const yStep = (maxY - minY) / gridCount;
-    
-    // Horizontal grid lines
+    const gridCount = 5;
+    ctx.beginPath();
     for (let i = 0; i <= gridCount; i++) {
-      const y = minY + i * yStep;
-      const canvasY = toCanvasY(y);
+      const x = (i / gridCount) * width;
+      const y = (i / gridCount) * height;
       
-      ctx.moveTo(padding, canvasY);
-      ctx.lineTo(width - padding, canvasY);
+      // Horizontal line
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
       
-      // Y-axis labels
-      ctx.fillStyle = '#64748b';
-      ctx.font = '8px Arial';
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(y.toFixed(1), padding - 5, canvasY);
+      // Vertical line
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
     }
-    
-    // Vertical grid lines
-    for (let i = 0; i <= gridCount; i++) {
-      const x = minX + i * xStep;
-      const canvasX = toCanvasX(x);
-      
-      ctx.moveTo(canvasX, padding);
-      ctx.lineTo(canvasX, height - padding);
-      
-      // X-axis labels
-      ctx.fillStyle = '#64748b';
-      ctx.font = '8px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillText(x.toFixed(1), canvasX, height - padding + 5);
-    }
-    
     ctx.stroke();
     
-    // Draw lines connecting related words if available
-    if (midpointWords && midpointWords.length > 0) {
-      midpointWords.forEach(cluster => {
-        if (cluster && cluster.parent1 && cluster.parent2) {
-          const parent1Point = coordinates.find(p => p.word === cluster.parent1);
-          const parent2Point = coordinates.find(p => p.word === cluster.parent2);
-          
-          if (parent1Point && parent2Point) {
-            ctx.beginPath();
-            ctx.strokeStyle = '#64748b';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([3, 2]);
-            
-            // Direct line between related words
-            ctx.moveTo(toCanvasX(parent1Point.x), toCanvasY(parent1Point.y));
-            ctx.lineTo(toCanvasX(parent2Point.x), toCanvasY(parent2Point.y));
-            
-            ctx.stroke();
-            ctx.setLineDash([]);
-          }
-        }
-      });
-    }
-    
-    // Store point coordinates for hover detection
+    // Prepare to draw points
     const points = [];
     
-    // Draw points and labels
+    // Draw points for each word
     coordinates.forEach(point => {
       const x = toCanvasX(point.x);
       const y = toCanvasY(point.y);
       
+      // Determine if this is a primary word or a related word
+      const isPrimaryWord = words.includes(point.word);
+      
+      // Set point size and color based on whether it's a primary or related word
+      const radius = isPrimaryWord ? 8 : 5;
+      
+      // Get color for the point
+      let color;
+      if (isPrimaryWord) {
+        // Use a specific color for each primary word
+        const colors = ['#4285F4', '#EA4335', '#FBBC05', '#34A853', '#9C27B0', '#FF9800', '#00BCD4'];
+        const wordIndex = words.indexOf(point.word);
+        color = colors[wordIndex % colors.length];
+      } else {
+        // Use a neutral color for related words
+        color = 'rgba(150, 150, 150, 0.7)';
+      }
+      
       // Store point data for hover detection
       points.push({
-        x, 
-        y, 
-        radius: words.includes(point.word) ? 8 : 6,
+        x,
+        y,
+        radius,
         word: point.word,
+        color,
+        isPrimary: isPrimaryWord,
         truncatedVector: point.truncatedVector
       });
       
       // Draw point
       ctx.beginPath();
-      
-      // Different colors for different types of words
-      if (words.includes(point.word)) {
-        // Use a color based on the index in the words array
-        const colors = ['#4285F4', '#EA4335', '#FBBC05', '#34A853', '#9C27B0', '#FF9800', '#00BCD4'];
-        const colorIndex = words.indexOf(point.word) % colors.length;
-        ctx.fillStyle = colors[colorIndex];
-        ctx.arc(x, y, 8, 0, Math.PI * 2);
-      } else {
-        // Find which cluster this word belongs to
-        let clusterIndex = -1;
-        if (midpointWords) {
-          for (let i = 0; i < midpointWords.length; i++) {
-            if (midpointWords[i] && midpointWords[i].words) {
-              const found = midpointWords[i].words.some(item => item.word === point.word);
-              if (found) {
-                clusterIndex = i;
-                break;
-              }
-            }
-          }
-        }
-        
-        // Color based on cluster index
-        const colors = ['#34A853', '#4285F4', '#EA4335', '#9C27B0', '#FF9800'];
-        ctx.fillStyle = colors[clusterIndex % colors.length] || '#34A853';
-        ctx.arc(x, y, 6, 0, Math.PI * 2);
-      }
-      
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
       ctx.fill();
       
-      // Add a dark outline to the points for better visibility
-      ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+      // Add a subtle glow effect
+      ctx.beginPath();
+      ctx.arc(x, y, radius + 2, 0, Math.PI * 2);
+      ctx.fillStyle = `${color}33`; // Add transparency
+      ctx.fill();
       
-      // Draw label with improved visibility
-      const label = point.word;
-      
-      // First draw a semi-transparent background for the text
-      ctx.font = 'bold 16px Arial';
-      const textMetrics = ctx.measureText(label);
-      const textWidth = textMetrics.width;
-      const textHeight = 16; // Approximate height for the font size
-      
-      // Only draw text background if there's text to display
-      if (label) {
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.7)'; // Semi-transparent dark background
-        ctx.fillRect(x - textWidth/2 - 4, y - textHeight - 14, textWidth + 8, textHeight + 4);
+      // Draw label for primary words
+      if (isPrimaryWord) {
+        const label = point.word;
         
-        // Then draw the text
-        ctx.fillStyle = '#FFFFFF';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(label, x, y - 12);
+        // First draw a semi-transparent background for the text
+        ctx.font = 'bold 14px Arial';
+        const textMetrics = ctx.measureText(label);
+        const textWidth = textMetrics.width;
+        const textHeight = 14; // Approximate height for the font size
+        
+        // Only draw text background if there's text to display
+        if (label) {
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.7)'; // Semi-transparent dark background
+          ctx.fillRect(x - textWidth/2 - 4, y - textHeight - 14, textWidth + 8, textHeight + 4);
+          
+          // Then draw the text
+          ctx.fillStyle = '#FFFFFF';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(label, x, y - 12);
+        }
       }
     });
     
@@ -297,15 +254,18 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
       
       // Check if mouse is over any point
       let hoveredPoint = null;
+      
       for (const point of points) {
-        const distance = Math.sqrt((mouseX - point.x) ** 2 + (mouseY - point.y) ** 2);
+        const distance = Math.sqrt(
+          Math.pow(mouseX - point.x, 2) + Math.pow(mouseY - point.y, 2)
+        );
+        
         if (distance <= point.radius) {
           hoveredPoint = point;
           break;
         }
       }
       
-      // Show tooltip if hovering over a point
       if (hoveredPoint) {
         canvas.style.cursor = 'pointer';
         
@@ -385,27 +345,47 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
           <p>Error: {error}</p>
         </div>
       ) : (
-        <>
+        <div className="graph-content">
           <canvas ref={canvasRef} className="vector-canvas" />
-          <div className="graph-legend">
-            {words.map((word, index) => {
-              const colors = ['#4285F4', '#EA4335', '#FBBC05', '#34A853', '#9C27B0', '#FF9800', '#00BCD4'];
-              return (
-                <div key={index} className="legend-item">
-                  <span className="legend-color" style={{backgroundColor: colors[index % colors.length]}}></span>
-                  <span className="legend-label">{word}</span>
-                </div>
-              );
-            })}
-            {midpointWords && midpointWords.length > 0 && (
-              <div className="legend-item">
-                <span className="legend-color" style={{backgroundColor: '#34A853'}}></span>
-                <span className="legend-label">Related Words</span>
-              </div>
-            )}
-          </div>
-        </>
+        </div>
       )}
+      
+      <style jsx>{`
+        .graph-container {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background-color: #0f172a;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+        
+        .graph-loading, .graph-error {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100%;
+          width: 100%;
+          color: #94a3b8;
+        }
+        
+        .graph-content {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          padding: 20px;
+        }
+        
+        .vector-canvas {
+          background-color: #1e293b;
+          border-radius: 8px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+      `}</style>
     </div>
   );
 };
