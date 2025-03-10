@@ -3,17 +3,15 @@ import axios from 'axios';
 import VectorGraph from './VectorGraph';
 import WordInput from './WordInput';
 import Tools from './Tools';
-import { findMidpointsRecursively } from '../utils/fetchMidpoints';
 
 const HomePage = () => {
   const [words, setWords] = useState([]);
   const [response, setResponse] = useState(null);
-  const [midpointClusters, setMidpointClusters] = useState([]);
+  const [relatedClusters, setRelatedClusters] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [recursionDepth, setRecursionDepth] = useState(1);
   const [serverUrl, setServerUrl] = useState('http://localhost:5001');
-  const [numMidpoints, setNumMidpoints] = useState(5); // Default to 5 midpoints
+  const [numNeighbors, setNumNeighbors] = useState(5); // Default to 5 neighbors
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -70,7 +68,7 @@ const HomePage = () => {
     } catch (error) {
       console.error('Error submitting form:', error);
       setError(error.response?.data?.error || 'An error occurred while processing your request');
-      setMidpointClusters([]); // Only clear on error
+      setRelatedClusters([]); // Only clear on error
     } finally {
       setLoading(false);
     }
@@ -109,11 +107,9 @@ const HomePage = () => {
             <Tools
               words={words}
               serverUrl={serverUrl}
-              recursionDepth={recursionDepth}
-              setRecursionDepth={setRecursionDepth}
-              numMidpoints={numMidpoints}
-              setNumMidpoints={setNumMidpoints}
-              setMidpointClusters={setMidpointClusters}
+              numMidpoints={numNeighbors}
+              setNumMidpoints={setNumNeighbors}
+              setMidpointClusters={setRelatedClusters}
               setLoading={setLoading}
               setError={setError}
               loading={loading}
@@ -125,9 +121,8 @@ const HomePage = () => {
           <div className="graph-area">
             <VectorGraph 
               words={words}
-              midpointWords={midpointClusters}
-              recursionDepth={recursionDepth}
-              numMidpoints={numMidpoints}
+              midpointWords={relatedClusters}
+              numMidpoints={numNeighbors}
               serverUrl={serverUrl}
             />
           </div>

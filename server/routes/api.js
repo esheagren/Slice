@@ -61,64 +61,10 @@ const router = express.Router();
 //   }
 // });
 
-// Endpoint to find midpoint words between any two words
-router.post('/findMidpointWords', async (req, res) => {
-  try {
-    const { word1, word2, numNeighbors = 10 } = req.body;
-    
-    if (!word1 || !word2) {
-      return res.status(400).json({ error: 'Both words are required' });
-    }
-    
-    // Get vectors for both words
-    const vector1 = embeddingService.getWordVector(word1);
-    const vector2 = embeddingService.getWordVector(word2);
-    
-    if (!vector1) {
-      return res.status(404).json({ error: `Word "${word1}" not found in vocabulary` });
-    }
-    
-    if (!vector2) {
-      return res.status(404).json({ error: `Word "${word2}" not found in vocabulary` });
-    }
-    
-    // Calculate midpoint vector
-    const midpointVector = embeddingService.calculateMidpoint(vector1, vector2);
-    
-    // Find nearest neighbors to the midpoint
-    const nearestWords = embeddingService.findNearestNeighbors(midpointVector, numNeighbors);
-    
-    // Calculate distances from each word to the original words
-    const enhancedResults = nearestWords.map(item => {
-      const wordVector = embeddingService.getWordVector(item.word);
-      const distanceToWord1 = embeddingService.calculateEuclideanDistance(wordVector, vector1);
-      const distanceToWord2 = embeddingService.calculateEuclideanDistance(wordVector, vector2);
-      
-      return {
-        ...item,
-        distanceToWord1,
-        distanceToWord2
-      };
-    });
-    
-    res.json({
-      message: 'Midpoint words found successfully',
-      data: {
-        word1,
-        word2,
-        nearestWords: enhancedResults
-      }
-    });
-  } catch (error) {
-    console.error('Error finding midpoint words:', error);
-    res.status(500).json({ error: 'Failed to find midpoint words' });
-  }
-});
-
 // Endpoint to get 2D coordinates for visualization
 router.post('/getVectorCoordinates', async (req, res) => {
   try {
-    const { words, calculateMidpoint } = req.body;
+    const { words } = req.body;
     
     if (!words || !Array.isArray(words) || words.length === 0) {
       return res.status(400).json({ error: 'Invalid words array' });
@@ -144,31 +90,6 @@ router.post('/getVectorCoordinates', async (req, res) => {
       });
     }
     
-    // Calculate midpoints between all pairs of words if requested
-    if (calculateMidpoint && vectors.length >= 2) {
-      // Create all possible pairs of words
-      for (let i = 0; i < vectors.length - 1; i++) {
-        for (let j = i + 1; j < vectors.length; j++) {
-          const word1 = vectors[i];
-          const word2 = vectors[j];
-          
-          // Skip if either word is already a midpoint
-          if (word1.isExactMidpoint || word2.isExactMidpoint) continue;
-          
-          const midpointVector = embeddingService.calculateMidpoint(word1.vector, word2.vector);
-          vectors.push({
-            word: `midpoint_${word1.word}_${word2.word}`,
-            vector: midpointVector,
-            isExactMidpoint: true,
-            parent1: word1.word,
-            parent2: word2.word,
-            // Add truncated vector for midpoint
-            truncatedVector: `[${midpointVector.slice(0, 5).join(', ')}...]`
-          });
-        }
-      }
-    }
-    
     // Extract just the vectors for PCA
     const vectorsOnly = vectors.map(item => item.vector);
     
@@ -180,10 +101,7 @@ router.post('/getVectorCoordinates', async (req, res) => {
       word: item.word,
       x: coordinates2D[index][0],
       y: coordinates2D[index][1],
-      isExactMidpoint: item.isExactMidpoint || false,
-      parent1: item.parent1,
-      parent2: item.parent2,
-      truncatedVector: item.truncatedVector || `[${item.vector.slice(0, 5).join(', ')}...]`
+      truncatedVector: `[${item.vector.slice(0, 5).join(', ')}...]`
     }));
     
     res.json({

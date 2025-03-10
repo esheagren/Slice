@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 
-const VectorGraph = ({ words, midpointWords, recursionDepth, numMidpoints, serverUrl = 'http://localhost:5001' }) => {
+const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://localhost:5001' }) => {
   const [coordinates, setCoordinates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -19,12 +19,11 @@ const VectorGraph = ({ words, midpointWords, recursionDepth, numMidpoints, serve
         // Create array of all words to visualize
         const allWords = [...words];
         
-        // Add midpoint words if available - only if midpointWords has content
-        // This means the Find Midpoints button was clicked
-        const hasMidpoints = midpointWords && midpointWords.length > 0;
+        // Add related words if available
+        const hasRelatedWords = midpointWords && midpointWords.length > 0;
         
-        if (hasMidpoints) {
-          // Add all words from all midpoint clusters
+        if (hasRelatedWords) {
+          // Add all words from all clusters
           midpointWords.forEach(cluster => {
             if (cluster && cluster.words) {
               allWords.push(...cluster.words.map(item => item.word));
@@ -37,11 +36,9 @@ const VectorGraph = ({ words, midpointWords, recursionDepth, numMidpoints, serve
         
         console.log('Fetching coordinates for words:', uniqueWords);
         
-        // First get the vector coordinates for visualization
+        // Get the vector coordinates for visualization
         const response = await axios.post(`${serverUrl}/api/getVectorCoordinates`, { 
-          words: uniqueWords,
-          // Be explicit about midpoint calculation
-          calculateMidpoint: hasMidpoints ? true : false
+          words: uniqueWords
         });
         
         // Now fetch the actual vector data for each word for the tooltips
@@ -67,8 +64,7 @@ const VectorGraph = ({ words, midpointWords, recursionDepth, numMidpoints, serve
         const coordinatesWithVectors = response.data.data.map(point => {
           return {
             ...point,
-            truncatedVector: point.isExactMidpoint ? point.truncatedVector : 
-                             vectorMap[point.word] || `Vector for ${point.word}`
+            truncatedVector: vectorMap[point.word] || `Vector for ${point.word}`
           };
         });
         
@@ -192,17 +188,12 @@ const VectorGraph = ({ words, midpointWords, recursionDepth, numMidpoints, serve
     
     ctx.stroke();
     
-    // Draw lines connecting the points if midpoints are available
+    // Draw lines connecting related words if available
     if (midpointWords && midpointWords.length > 0) {
       midpointWords.forEach(cluster => {
         if (cluster && cluster.parent1 && cluster.parent2) {
           const parent1Point = coordinates.find(p => p.word === cluster.parent1);
           const parent2Point = coordinates.find(p => p.word === cluster.parent2);
-          const exactMidpointPoint = coordinates.find(p => 
-            p.isExactMidpoint && 
-            p.parent1 === cluster.parent1 && 
-            p.parent2 === cluster.parent2
-          );
           
           if (parent1Point && parent2Point) {
             ctx.beginPath();
@@ -210,16 +201,9 @@ const VectorGraph = ({ words, midpointWords, recursionDepth, numMidpoints, serve
             ctx.lineWidth = 1;
             ctx.setLineDash([3, 2]);
             
-            // Only draw lines through midpoint if exactMidpointPoint exists
-            if (exactMidpointPoint) {
-              ctx.moveTo(toCanvasX(parent1Point.x), toCanvasY(parent1Point.y));
-              ctx.lineTo(toCanvasX(exactMidpointPoint.x), toCanvasY(exactMidpointPoint.y));
-              ctx.lineTo(toCanvasX(parent2Point.x), toCanvasY(parent2Point.y));
-            } else {
-              // Direct line if no midpoint
-              ctx.moveTo(toCanvasX(parent1Point.x), toCanvasY(parent1Point.y));
-              ctx.lineTo(toCanvasX(parent2Point.x), toCanvasY(parent2Point.y));
-            }
+            // Direct line between related words
+            ctx.moveTo(toCanvasX(parent1Point.x), toCanvasY(parent1Point.y));
+            ctx.lineTo(toCanvasX(parent2Point.x), toCanvasY(parent2Point.y));
             
             ctx.stroke();
             ctx.setLineDash([]);
@@ -240,7 +224,7 @@ const VectorGraph = ({ words, midpointWords, recursionDepth, numMidpoints, serve
       points.push({
         x, 
         y, 
-        radius: point.isExactMidpoint ? 10 : (words.includes(point.word) ? 8 : 6),
+        radius: words.includes(point.word) ? 8 : 6,
         word: point.word,
         truncatedVector: point.truncatedVector
       });
@@ -255,9 +239,6 @@ const VectorGraph = ({ words, midpointWords, recursionDepth, numMidpoints, serve
         const colorIndex = words.indexOf(point.word) % colors.length;
         ctx.fillStyle = colors[colorIndex];
         ctx.arc(x, y, 8, 0, Math.PI * 2);
-      } else if (point.isExactMidpoint) {
-        ctx.fillStyle = '#FBBC05'; // Yellow for the exact midpoint
-        ctx.arc(x, y, 10, 0, Math.PI * 2);
       } else {
         // Find which cluster this word belongs to
         let clusterIndex = -1;
@@ -287,7 +268,7 @@ const VectorGraph = ({ words, midpointWords, recursionDepth, numMidpoints, serve
       ctx.stroke();
       
       // Draw label with improved visibility
-      const label = point.isExactMidpoint ? "" : point.word;
+      const label = point.word;
       
       // First draw a semi-transparent background for the text
       ctx.font = 'bold 16px Arial';
