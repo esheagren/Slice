@@ -40,17 +40,17 @@ const VectorGraph = ({ words, midpointWords, recursionDepth, numMidpoints, serve
         // First get the vector coordinates for visualization
         const response = await axios.post(`${serverUrl}/api/getVectorCoordinates`, { 
           words: uniqueWords,
-          // Only calculate midpoint if midpointWords has content
-          calculateMidpoint: hasMidpoints
+          // Be explicit about midpoint calculation
+          calculateMidpoint: hasMidpoints ? true : false
         });
         
         // Now fetch the actual vector data for each word for the tooltips
         const vectorPromises = uniqueWords.map(async (word) => {
           try {
-            const vectorResponse = await axios.post(`${serverUrl}/api/submit`, { word1: word, word2: word });
+            const vectorResponse = await axios.post(`${serverUrl}/api/checkWord`, { word });
             return {
               word,
-              vector: vectorResponse.data.data.word1.vector
+              vector: vectorResponse.data.data.word.vector
             };
           } catch (error) {
             console.error(`Error fetching vector for ${word}:`, error);

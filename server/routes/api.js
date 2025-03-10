@@ -5,61 +5,61 @@ import { performPCA } from '../utils/mathHelpers.js';
 const router = express.Router();
 
 // Endpoint to check if words exist and get their vectors
-router.post('/submit', async (req, res) => {
-  console.log('Received request to /submit with body:', req.body);
-  try {
-    const { word1, word2 } = req.body;
+// router.post('/submit', async (req, res) => {
+//   console.log('Received request to /submit with body:', req.body);
+//   try {
+//     const { word1, word2 } = req.body;
     
-    // Validate input
-    if (!word1 || !word2) {
-      return res.status(400).json({ error: 'Both words are required' });
-    }
+//     // Validate input
+//     if (!word1 || !word2) {
+//       return res.status(400).json({ error: 'Both words are required' });
+//     }
     
-    // Make sure embeddings are loaded
-    await embeddingService.loadEmbeddings();
+//     // Make sure embeddings are loaded
+//     await embeddingService.loadEmbeddings();
     
-    // Check if words exist in embeddings
-    const word1Exists = embeddingService.wordExists(word1);
-    const word2Exists = embeddingService.wordExists(word2);
+//     // Check if words exist in embeddings
+//     const word1Exists = embeddingService.wordExists(word1);
+//     const word2Exists = embeddingService.wordExists(word2);
     
-    // Get vectors if words exist
-    const vector1 = word1Exists ? embeddingService.getWordVector(word1) : null;
-    const vector2 = word2Exists ? embeddingService.getWordVector(word2) : null;
+//     // Get vectors if words exist
+//     const vector1 = word1Exists ? embeddingService.getWordVector(word1) : null;
+//     const vector2 = word2Exists ? embeddingService.getWordVector(word2) : null;
     
-    // Calculate midpoint if both vectors exist
-    let midpoint = null;
-    if (vector1 && vector2) {
-      midpoint = embeddingService.calculateMidpoint(vector1, vector2);
-    }
+//     // Calculate midpoint if both vectors exist
+//     let midpoint = null;
+//     if (vector1 && vector2) {
+//       midpoint = embeddingService.calculateMidpoint(vector1, vector2);
+//     }
     
-    // For display, truncate vectors to 5 elements
-    const truncateVector = (vec) => {
-      if (!vec) return null;
-      const firstFive = vec.slice(0, 5);
-      return `[${firstFive.join(', ')}...]`;
-    };
+//     // For display, truncate vectors to 5 elements
+//     const truncateVector = (vec) => {
+//       if (!vec) return null;
+//       const firstFive = vec.slice(0, 5);
+//       return `[${firstFive.join(', ')}...]`;
+//     };
     
-    return res.status(200).json({
-      success: true,
-      data: {
-        word1: {
-          exists: word1Exists,
-          vector: vector1 ? truncateVector(vector1) : null
-        },
-        word2: {
-          exists: word2Exists,
-          vector: vector2 ? truncateVector(vector2) : null
-        },
-        midpoint: midpoint ? truncateVector(midpoint) : null
-      },
-      message: generateResponseMessage(word1, word2, word1Exists, word2Exists)
-    });
+//     return res.status(200).json({
+//       success: true,
+//       data: {
+//         word1: {
+//           exists: word1Exists,
+//           vector: vector1 ? truncateVector(vector1) : null
+//         },
+//         word2: {
+//           exists: word2Exists,
+//           vector: vector2 ? truncateVector(vector2) : null
+//         },
+//         midpoint: midpoint ? truncateVector(midpoint) : null
+//       },
+//       message: generateResponseMessage(word1, word2, word1Exists, word2Exists)
+//     });
     
-  } catch (error) {
-    console.error('Error processing form submission:', error);
-    return res.status(500).json({ error: 'Server error' });
-  }
-});
+//   } catch (error) {
+//     console.error('Error processing form submission:', error);
+//     return res.status(500).json({ error: 'Server error' });
+//   }
+// });
 
 // Endpoint to find midpoint words between any two words
 router.post('/findMidpointWords', async (req, res) => {
@@ -257,6 +257,50 @@ router.post('/getRandomWords', async (req, res) => {
   } catch (error) {
     console.error('Error getting random words:', error);
     res.status(500).json({ error: 'Failed to get random words' });
+  }
+});
+
+// Endpoint to check if a word exists and get its vector
+router.post('/checkWord', async (req, res) => {
+  try {
+    const { word } = req.body;
+    
+    if (!word) {
+      return res.status(400).json({ error: 'Word is required' });
+    }
+    
+    // Make sure embeddings are loaded
+    await embeddingService.loadEmbeddings();
+    
+    // Check if word exists in embeddings
+    const wordExists = embeddingService.wordExists(word);
+    
+    // Get vector if word exists
+    const vector = wordExists ? embeddingService.getWordVector(word) : null;
+    
+    // For display, truncate vector to 5 elements
+    const truncateVector = (vec) => {
+      if (!vec) return null;
+      const firstFive = vec.slice(0, 5);
+      return `[${firstFive.join(', ')}...]`;
+    };
+    
+    return res.status(200).json({
+      success: true,
+      data: {
+        word: {
+          exists: wordExists,
+          vector: vector ? truncateVector(vector) : null
+        }
+      },
+      message: wordExists ? 
+        `Word "${word}" found! Vector retrieved successfully.` : 
+        `Word "${word}" was not found in the embeddings.`
+    });
+    
+  } catch (error) {
+    console.error('Error checking word:', error);
+    return res.status(500).json({ error: 'Server error' });
   }
 });
 

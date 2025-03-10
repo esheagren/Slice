@@ -32,7 +32,7 @@ const HomePage = () => {
     try {
       // Create an array of promises for each word
       const wordPromises = words.map(word => 
-        axios.post(`${serverUrl}/api/submit`, { word1: word, word2: word })
+        axios.post(`${serverUrl}/api/checkWord`, { word })
       );
       
       // Wait for all requests to complete
@@ -41,8 +41,8 @@ const HomePage = () => {
       // Process responses to check if all words exist
       const wordResults = responses.map((response, index) => ({
         word: words[index],
-        exists: response.data.data.word1.exists,
-        vector: response.data.data.word1.vector
+        exists: response.data.data.word.exists,
+        vector: response.data.data.word.vector
       }));
       
       // Check if any words don't exist
