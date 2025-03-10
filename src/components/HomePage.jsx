@@ -36,24 +36,8 @@ const HomePage = () => {
       console.log('Form submitted successfully:', response.data);
       setResponse(response.data);
       
-      // After successful form submission, also fetch the midpoints
-      // This ensures the graph has data to display
-      if (response.data.data.word1.exists && response.data.data.word2.exists) {
-        try {
-          const clusters = await findMidpointsRecursively(
-            formData.word1,
-            formData.word2,
-            1,
-            recursionDepth,
-            numMidpoints,
-            serverUrl
-          );
-          setMidpointClusters(clusters);
-        } catch (midpointError) {
-          console.error('Error finding initial midpoints:', midpointError);
-          // Don't set error here to avoid overriding the success message
-        }
-      }
+      // Removed the automatic midpoint fetching code that was here
+      
     } catch (error) {
       console.error('Error submitting form:', error);
       setError(error.response?.data?.error || 'An error occurred while processing your request');
