@@ -7,10 +7,22 @@ import './App.css'
 function App() {
   return (
     <Router>
+      <NavBar />
       <div className="app-container">
-        <header className="header">
-          <NavBar />
-        </header>
+        <div className="animated-background">
+          <div className="orb orb1"></div>
+          <div className="orb orb2"></div>
+          <div className="orb orb3"></div>
+          <div className="dots-container">
+            {Array(12).fill().map((_, i) => (
+              <div key={i} className="dot" style={{ 
+                transform: `rotate(${i * 30}deg) translateX(150px)`,
+                animationDelay: `${i * 0.2}s`
+              }}></div>
+            ))}
+          </div>
+        </div>
+
         <div className="main-layout">
           <Routes>
             <Route path="/" element={<HomePage />} />
