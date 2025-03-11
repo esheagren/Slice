@@ -1,11 +1,76 @@
 import React, { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
 
-const WordInput = ({ words, setWords, handleSubmit, handleKeyDown, loading }) => {
+const WordInput = ({ 
+  words, 
+  setWords, 
+  serverUrl, 
+  setResponse, 
+  setLoading, 
+  setError, 
+  loading,
+  setRelatedClusters 
+}) => {
   const [newWord, setNewWord] = useState('');
   const inputRef = useRef(null);
 
   const handleNewWordChange = (e) => {
     setNewWord(e.target.value);
+  };
+
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+    
+    if (words.length === 0) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Create an array of promises for each word
+      const wordPromises = words.map(word => 
+        axios.post(`${serverUrl}/api/checkWord`, { word })
+      );
+      
+      // Wait for all requests to complete
+      const responses = await Promise.all(wordPromises);
+      
+      // Process responses to check if all words exist
+      const wordResults = responses.map((response, index) => ({
+        word: words[index],
+        exists: response.data.data.word.exists,
+        vector: response.data.data.word.vector
+      }));
+      
+      // Check if any words don't exist
+      const nonExistingWords = wordResults.filter(result => !result.exists)
+                                         .map(result => result.word);
+      
+      let message = '';
+      if (nonExistingWords.length > 0) {
+        if (nonExistingWords.length === words.length) {
+          message = `None of the words were found in the embeddings.`;
+        } else {
+          message = `The following words were not found in the embeddings: ${nonExistingWords.join(', ')}`;
+        }
+      } else {
+        message = `All words found! Vectors retrieved successfully.`;
+      }
+      
+      setResponse({
+        message,
+        data: {
+          words: wordResults
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setError(error.response?.data?.error || 'An error occurred while processing your request');
+      setRelatedClusters([]); // Only clear on error
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleNewWordKeyDown = (e) => {

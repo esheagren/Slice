@@ -14,67 +14,6 @@ const HomePage = () => {
   const [numNeighbors, setNumNeighbors] = useState(5); // Default to 5 neighbors
   const [viewMode, setViewMode] = useState('2D'); // Default to 2D view
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
-    
-    if (words.length === 0) return;
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // Create an array of promises for each word
-      const wordPromises = words.map(word => 
-        axios.post(`${serverUrl}/api/checkWord`, { word })
-      );
-      
-      // Wait for all requests to complete
-      const responses = await Promise.all(wordPromises);
-      
-      // Process responses to check if all words exist
-      const wordResults = responses.map((response, index) => ({
-        word: words[index],
-        exists: response.data.data.word.exists,
-        vector: response.data.data.word.vector
-      }));
-      
-      // Check if any words don't exist
-      const nonExistingWords = wordResults.filter(result => !result.exists)
-                                         .map(result => result.word);
-      
-      let message = '';
-      if (nonExistingWords.length > 0) {
-        if (nonExistingWords.length === words.length) {
-          message = `None of the words were found in the embeddings.`;
-        } else {
-          message = `The following words were not found in the embeddings: ${nonExistingWords.join(', ')}`;
-        }
-      } else {
-        message = `All words found! Vectors retrieved successfully.`;
-      }
-      
-      setResponse({
-        message,
-        data: {
-          words: wordResults
-        }
-      });
-      
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      setError(error.response?.data?.error || 'An error occurred while processing your request');
-      setRelatedClusters([]); // Only clear on error
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="app-container">
       
@@ -83,9 +22,12 @@ const HomePage = () => {
           <WordInput 
             words={words}
             setWords={setWords}
-            handleSubmit={handleSubmit}
-            handleKeyDown={handleKeyDown}
+            serverUrl={serverUrl}
+            setResponse={setResponse}
+            setLoading={setLoading}
+            setError={setError}
             loading={loading}
+            setRelatedClusters={setRelatedClusters}
           />
           
           <div className="tools-wrapper">
