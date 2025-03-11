@@ -322,16 +322,16 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
       if (isPrimaryWord) {
         primaryPointsData.push(x, y, z);
         primaryPointsColors.push(color.r, color.g, color.b);
-        
-        // Add text label for primary words
-        const textSprite = createTextSprite(point.word);
-        textSprite.position.set(x, y + 0.7, z);
-        threeSceneRef.current.add(textSprite);
-        threeDObjectsRef.current.push(textSprite);
       } else {
         pointsData.push(x, y, z);
         pointsColors.push(color.r, color.g, color.b);
       }
+      
+      // Add text label for all words, not just primary ones
+      const textSprite = createTextSprite(point.word, isPrimaryWord);
+      textSprite.position.set(x, y + (isPrimaryWord ? 0.7 : 0.5), z);
+      threeSceneRef.current.add(textSprite);
+      threeDObjectsRef.current.push(textSprite);
     });
     
     // Create geometry for regular points
@@ -372,22 +372,23 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
     pointsRef.current = pointInfos;
   };
   
-  // Create a text sprite for labels
-  const createTextSprite = (text) => {
+  // Create a text sprite for labels - updated to handle both primary and neighbor words
+  const createTextSprite = (text, isPrimary = false) => {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 256;
     canvas.height = 64;
     
-    // Background
-    context.fillStyle = 'rgba(15, 23, 42, 0.7)';
+    // Background with different opacity based on word type
+    const bgOpacity = isPrimary ? 0.7 : 0.5;
+    context.fillStyle = `rgba(15, 23, 42, ${bgOpacity})`;
     context.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Text
-    context.font = 'bold 32px Arial';
+    // Text with different style based on word type
+    context.font = isPrimary ? 'bold 32px Arial' : '28px Arial';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.fillStyle = '#ffffff';
+    context.fillStyle = isPrimary ? '#ffffff' : 'rgba(255, 255, 255, 0.8)';
     context.fillText(text, canvas.width / 2, canvas.height / 2);
     
     // Create texture and sprite
@@ -397,12 +398,12 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
       transparent: true
     });
     const sprite = new THREE.Sprite(material);
-    sprite.scale.set(2, 0.5, 1);
+    sprite.scale.set(isPrimary ? 2 : 1.5, isPrimary ? 0.5 : 0.4, 1);
     
     return sprite;
   };
   
-  // Set up raycasting for tooltips in 3D
+  // Set up raycasting for tooltips in 3D - enhanced tooltip
   const setupRaycasting = (canvas) => {
     if (!threeSceneRef.current) return;
     
@@ -451,7 +452,19 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
         tooltip.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
         
         const point = intersects[0].object.userData;
-        tooltip.innerHTML = `<strong>${point.word}</strong><br>${point.truncatedVector || 'Vector data unavailable'}`;
+        
+        // Enhanced tooltip with more information
+        tooltip.innerHTML = `
+          <strong style="font-size: 16px; color: ${point.isPrimary ? '#FFC837' : '#FFFFFF'}">
+            ${point.word}
+          </strong>
+          <div style="margin-top: 4px; font-size: 12px; color: #94a3b8;">
+            ${point.isPrimary ? 'Primary word' : 'Neighbor word'}
+          </div>
+          <div style="margin-top: 8px; font-family: monospace; font-size: 12px; color: #cbd5e1; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 2px;">
+            ${point.truncatedVector || 'Vector data unavailable'}
+          </div>
+        `;
         
         document.body.appendChild(tooltip);
       } else {
@@ -587,27 +600,28 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
       ctx.fillStyle = `${color}33`; // Add transparency
       ctx.fill();
       
-      // Draw label for primary words
-      if (isPrimaryWord) {
-        const label = point.word;
+      // Draw label for primary words and neighbor words
+      // Changed: Now we show labels for all words, not just primary ones
+      const label = point.word;
+      
+      // First draw a semi-transparent background for the text
+      ctx.font = isPrimaryWord ? 'bold 14px Arial' : '12px Arial';
+      const textMetrics = ctx.measureText(label);
+      const textWidth = textMetrics.width;
+      const textHeight = isPrimaryWord ? 14 : 12; // Approximate height for the font size
+      
+      // Only draw text background if there's text to display
+      if (label) {
+        // Use different background opacity for primary vs neighbor words
+        const bgOpacity = isPrimaryWord ? 0.7 : 0.5;
+        ctx.fillStyle = `rgba(15, 23, 42, ${bgOpacity})`; // Semi-transparent dark background
+        ctx.fillRect(x - textWidth/2 - 4, y - textHeight - 14, textWidth + 8, textHeight + 4);
         
-        // First draw a semi-transparent background for the text
-        ctx.font = 'bold 14px Arial';
-        const textMetrics = ctx.measureText(label);
-        const textWidth = textMetrics.width;
-        const textHeight = 14; // Approximate height for the font size
-        
-        // Only draw text background if there's text to display
-        if (label) {
-          ctx.fillStyle = 'rgba(15, 23, 42, 0.7)'; // Semi-transparent dark background
-          ctx.fillRect(x - textWidth/2 - 4, y - textHeight - 14, textWidth + 8, textHeight + 4);
-          
-          // Then draw the text
-          ctx.fillStyle = '#FFFFFF';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'bottom';
-          ctx.fillText(label, x, y - 12);
-        }
+        // Then draw the text
+        ctx.fillStyle = isPrimaryWord ? '#FFFFFF' : 'rgba(255, 255, 255, 0.8)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(label, x, y - 12);
       }
     });
     
@@ -656,7 +670,18 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
         tooltip.style.maxWidth = '300px';
         tooltip.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
         
-        tooltip.innerHTML = `<strong>${hoveredPoint.word}</strong><br>${hoveredPoint.truncatedVector}`;
+        // Enhanced tooltip with more information
+        tooltip.innerHTML = `
+          <strong style="font-size: 16px; color: ${hoveredPoint.isPrimary ? '#FFC837' : '#FFFFFF'}">
+            ${hoveredPoint.word}
+          </strong>
+          <div style="margin-top: 4px; font-size: 12px; color: #94a3b8;">
+            ${hoveredPoint.isPrimary ? 'Primary word' : 'Neighbor word'}
+          </div>
+          <div style="margin-top: 8px; font-family: monospace; font-size: 12px; color: #cbd5e1; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 2px;">
+            ${hoveredPoint.truncatedVector}
+          </div>
+        `;
         
         document.body.appendChild(tooltip);
       } else {
@@ -756,7 +781,18 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
         tooltip.style.maxWidth = '300px';
         tooltip.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
         
-        tooltip.innerHTML = `<strong>${hoveredPoint.word}</strong><br>${hoveredPoint.truncatedVector}`;
+        // Enhanced tooltip with more information
+        tooltip.innerHTML = `
+          <strong style="font-size: 16px; color: ${hoveredPoint.isPrimary ? '#FFC837' : '#FFFFFF'}">
+            ${hoveredPoint.word}
+          </strong>
+          <div style="margin-top: 4px; font-size: 12px; color: #94a3b8;">
+            ${hoveredPoint.isPrimary ? 'Primary word' : 'Neighbor word'}
+          </div>
+          <div style="margin-top: 8px; font-family: monospace; font-size: 12px; color: #cbd5e1; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 2px;">
+            ${hoveredPoint.truncatedVector}
+          </div>
+        `;
         
         document.body.appendChild(tooltip);
       } else {
