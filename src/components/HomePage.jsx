@@ -3,6 +3,7 @@ import axios from 'axios';
 import VectorGraph from './VectorGraph';
 import WordInput from './WordInput';
 import Tools from './Tools';
+import ViewButton from './ViewButton';
 
 const HomePage = () => {
   const [words, setWords] = useState([]);
@@ -35,15 +36,12 @@ const HomePage = () => {
               words={words}
               serverUrl={serverUrl}
               numMidpoints={numNeighbors}
-              setNumMidpoints={setNumNeighbors}
               setMidpointClusters={setRelatedClusters}
               setLoading={setLoading}
               setError={setError}
               loading={loading}
               wordsValid={response && response.data && response.data.words && 
                          response.data.words.some(word => word.exists)}
-              viewMode={viewMode}
-              setViewMode={setViewMode}
             />
           </div>
           
@@ -68,6 +66,7 @@ const HomePage = () => {
               numMidpoints={numNeighbors}
               serverUrl={serverUrl}
               viewMode={viewMode}
+              setViewMode={setViewMode}
             />
           </div>
         </div>

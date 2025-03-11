@@ -8,9 +8,7 @@ const Tools = ({
   setLoading,
   setError,
   loading,
-  wordsValid,
-  viewMode,
-  setViewMode
+  wordsValid
 }) => {
   
   // Add this new function to handle the Add Neighbors button click
@@ -39,22 +37,10 @@ const Tools = ({
       }
     }
   };
-  
-  // Toggle between 2D and 3D view modes
-  const toggleViewMode = () => {
-    setViewMode(viewMode === '2D' ? '3D' : '2D');
-  };
 
   return (
     <div className="tools-container">
       <div className="tools-row primary-tools">
-        <button 
-          className="tool-button" 
-          onClick={toggleViewMode}
-          disabled={!wordsValid || loading}
-        >
-          {viewMode === '2D' ? '3D View' : '2D View'}
-        </button>
         <button 
           className="tool-button" 
           onClick={handleAddNeighbors}
