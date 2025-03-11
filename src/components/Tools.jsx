@@ -67,7 +67,7 @@ const Tools = ({
       <style jsx>{`
         .tools-container {
           padding: 0.75rem;
-          background-color: #1e293b;
+          background-color: #1a1a1c;
           border-radius: 8px;
           margin-top: 1rem;
           margin-bottom: 1rem;
@@ -87,7 +87,7 @@ const Tools = ({
           flex: 1;
           padding: 0.75rem 1rem;
           border-radius: 6px;
-          background-color: #334155;
+          background: linear-gradient(135deg, rgba(255, 157, 66, 0.8) 0%, rgba(255, 200, 55, 0.8) 100%);
           color: white;
           border: none;
           font-weight: 500;
@@ -98,7 +98,7 @@ const Tools = ({
         }
         
         .tool-button:hover:not(:disabled) {
-          background-color: #475569;
+          background: linear-gradient(135deg, rgba(255, 157, 66, 1) 0%, rgba(255, 200, 55, 1) 100%);
           transform: translateY(-1px);
           box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
         }

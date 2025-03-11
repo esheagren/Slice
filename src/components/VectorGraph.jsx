@@ -861,16 +861,18 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
           height: 100%;
           position: relative;
           overflow: hidden;
-          background-color: #0f172a;
-          border-radius: 8px;
+          background: linear-gradient(135deg, #0f0f10 0%, #1a1a1c 100%);
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
         
         .vector-canvas {
           position: absolute;
           top: 20px;
           left: 20px;
-          background-color: #0f172a;
-          border-radius: 4px;
+          background-color: transparent;
+          border-radius: 8px;
         }
         
         .loading-overlay {
@@ -883,19 +885,23 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
           flex-direction: column;
           justify-content: center;
           align-items: center;
-          background-color: rgba(15, 23, 42, 0.8);
+          background-color: rgba(15, 15, 16, 0.9);
           color: white;
           z-index: 10;
+          backdrop-filter: blur(4px);
         }
         
         .loading-spinner {
-          border: 4px solid rgba(255, 255, 255, 0.3);
+          border: 4px solid rgba(255, 255, 255, 0.1);
           border-radius: 50%;
-          border-top: 4px solid #4285F4;
-          width: 40px;
-          height: 40px;
+          border-top: 4px solid #FF9D42;
+          border-right: 4px solid #FFC837;
+          border-bottom: 4px solid #FF5757;
+          width: 50px;
+          height: 50px;
           animation: spin 1s linear infinite;
           margin-bottom: 16px;
+          box-shadow: 0 0 20px rgba(255, 157, 66, 0.3);
         }
         
         @keyframes spin {
@@ -912,25 +918,28 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
           display: flex;
           justify-content: center;
           align-items: center;
-          background-color: rgba(239, 68, 68, 0.1);
-          color: #ef4444;
+          background-color: rgba(239, 68, 68, 0.05);
+          color: #FF5757;
           padding: 20px;
           text-align: center;
           z-index: 10;
+          backdrop-filter: blur(4px);
         }
         
         .view-mode-indicator {
           position: absolute;
-          top: 10px;
-          right: 10px;
-          background-color: rgba(15, 23, 42, 0.7);
+          top: 16px;
+          right: 16px;
+          background: linear-gradient(135deg, rgba(255, 157, 66, 0.9) 0%, rgba(255, 200, 55, 0.9) 100%);
           color: white;
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 12px;
-          font-weight: 500;
+          padding: 6px 12px;
+          border-radius: 20px;
+          font-size: 14px;
+          font-weight: 600;
           z-index: 5;
           transition: all 0.3s ease;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          letter-spacing: 0.5px;
         }
       `}</style>
     </div>

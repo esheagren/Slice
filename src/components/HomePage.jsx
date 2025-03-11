@@ -77,9 +77,6 @@ const HomePage = () => {
 
   return (
     <div className="app-container">
-      <div className="header">
-        <h1>Word Vector Explorer</h1>
-      </div>
       
       <div className="main-layout">
         <div className="sidebar">
@@ -155,7 +152,7 @@ const HomePage = () => {
           width: 300px;
           padding: 1rem;
           overflow-y: auto;
-          background-color: #0f172a;
+          background-color: #0f0f10;
           display: flex;
           flex-direction: column;
           gap: 1rem;
@@ -190,9 +187,9 @@ const HomePage = () => {
         }
         
         .error-message {
-          color: #ef4444;
+          color: #FF5757;
           padding: 0.5rem;
-          background-color: rgba(239, 68, 68, 0.1);
+          background-color: rgba(255, 87, 87, 0.1);
           border-radius: 4px;
           margin-top: 0.5rem;
         }
@@ -202,7 +199,7 @@ const HomePage = () => {
         }
         
         .response-message {
-          color: #10b981;
+          color: #FFC837;
           font-size: 0.9rem;
         }
       `}</style>

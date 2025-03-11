@@ -51,6 +51,22 @@ const WordInput = ({ words, setWords, handleSubmit, handleKeyDown, loading }) =>
 
   return (
     <div className="word-input-container">
+      <div className="input-row">
+        <input
+          ref={inputRef}
+          type="text"
+          id="newWord"
+          name="newWord"
+          value={newWord}
+          onChange={handleNewWordChange}
+          onKeyDown={handleNewWordKeyDown}
+          placeholder={words.length === 0 ? "Enter words (press Enter after each)" : "Add another word"}
+          disabled={loading}
+          autoFocus
+          className="word-input"
+        />
+      </div>
+      
       <div className="words-list">
         {words.map((word, index) => (
           <div key={index} className="word-tag">
@@ -67,49 +83,74 @@ const WordInput = ({ words, setWords, handleSubmit, handleKeyDown, loading }) =>
         ))}
       </div>
       
-      <div className="input-row">
-        <input
-          ref={inputRef}
-          type="text"
-          id="newWord"
-          name="newWord"
-          value={newWord}
-          onChange={handleNewWordChange}
-          onKeyDown={handleNewWordKeyDown}
-          placeholder={words.length === 0 ? "Enter words (press Enter after each)" : "Add another word"}
-          disabled={loading}
-          autoFocus
-        />
-      </div>
-      
       <style jsx>{`
+        .word-input-container {
+          margin-bottom: 20px;
+        }
+        
+        .input-row {
+          margin-bottom: 16px;
+        }
+        
+        .word-input {
+          width: 100%;
+          padding: 16px 20px;
+          font-size: 18px;
+          border-radius: 12px;
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          background-color: rgba(26, 26, 28, 0.8);
+          color: #f8fafc;
+          transition: all 0.2s ease-in-out;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .word-input:focus {
+          border-color: #FF9D42;
+          box-shadow: 0 0 0 3px rgba(255, 157, 66, 0.3);
+          outline: none;
+        }
+        
+        .word-input::placeholder {
+          color: #94a3b8;
+        }
+        
         .words-list {
           display: flex;
           flex-wrap: wrap;
-          gap: 8px;
-          margin-bottom: 12px;
+          gap: 10px;
         }
         
         .word-tag {
           display: flex;
           align-items: center;
-          background-color: #1e293b;
-          border-radius: 16px;
-          padding: 4px 12px;
+          background: linear-gradient(135deg, rgba(255, 157, 66, 0.2) 0%, rgba(255, 200, 55, 0.2) 100%);
+          border: 1px solid rgba(255, 157, 66, 0.3);
+          border-radius: 20px;
+          padding: 8px 16px;
+          font-size: 16px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          transition: all 0.2s ease;
+        }
+        
+        .word-tag:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
         
         .remove-word-btn {
           background: none;
           border: none;
           color: #94a3b8;
-          font-size: 16px;
+          font-size: 18px;
           margin-left: 8px;
           cursor: pointer;
           padding: 0 4px;
+          transition: all 0.2s ease;
         }
         
         .remove-word-btn:hover {
-          color: #f87171;
+          color: #FF5757;
+          transform: scale(1.2);
         }
       `}</style>
     </div>
