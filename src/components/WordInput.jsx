@@ -12,6 +12,7 @@ const WordInput = ({
   setRelatedClusters 
 }) => {
   const [newWord, setNewWord] = useState('');
+  const [invalidWords, setInvalidWords] = useState([]);
   const inputRef = useRef(null);
 
   const handleNewWordChange = (e) => {
@@ -45,6 +46,9 @@ const WordInput = ({
       // Check if any words don't exist
       const nonExistingWords = wordResults.filter(result => !result.exists)
                                          .map(result => result.word);
+      
+      // Update the invalidWords state with the list of non-existing words
+      setInvalidWords(nonExistingWords);
       
       let message = '';
       if (nonExistingWords.length > 0) {
@@ -134,7 +138,10 @@ const WordInput = ({
       
       <div className="words-list">
         {words.map((word, index) => (
-          <div key={index} className="word-tag">
+          <div 
+            key={index} 
+            className={`word-tag ${invalidWords.includes(word) ? 'invalid-word' : ''}`}
+          >
             <span>{word}</span>
             <button 
               type="button" 
@@ -200,6 +207,12 @@ const WordInput = ({
         .word-tag:hover {
           transform: translateY(-2px);
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .invalid-word {
+          background: linear-gradient(135deg, rgba(255, 87, 87, 0.2) 0%, rgba(255, 120, 120, 0.2) 100%);
+          border: 1px solid rgba(255, 87, 87, 0.5);
+          color: #FF5757;
         }
         
         .remove-word-btn {
