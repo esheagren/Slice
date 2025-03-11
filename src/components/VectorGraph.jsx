@@ -984,4 +984,6 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
   );
 };
 
+//test
+
 export default VectorGraph;
