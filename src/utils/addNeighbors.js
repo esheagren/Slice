@@ -31,33 +31,14 @@ export const addNeighbors = async (words, clusterSize, serverUrl) => {
       }
     });
     
-    // 2. Get random sample words from the database
-    const randomSamplePromise = axios.post(`${serverUrl}/api/getRandomWords`, {
-      count: 20 // Request 20 random words
-    });
-    
     // Wait for all requests to complete
-    const [randomSampleResponse, ...nearestNeighborResults] = await Promise.all([
-      randomSamplePromise,
-      ...nearestNeighborPromises
-    ]);
+    const nearestNeighborResults = await Promise.all(nearestNeighborPromises);
     
     // Filter out any failed requests
     const validNeighborClusters = nearestNeighborResults.filter(result => result !== null);
     
-    // Create a cluster for random sample words
-    const randomSampleCluster = {
-      parent1: "random_sample",
-      parent2: null,
-      isRandomSample: true,
-      words: randomSampleResponse.data.data.words.map(word => ({
-        word,
-        isRandomSample: true
-      }))
-    };
-    
-    // Combine all clusters
-    return [...validNeighborClusters, randomSampleCluster];
+    // Return only the neighbor clusters
+    return validNeighborClusters;
   } catch (error) {
     console.error('Error in addNeighbors utility:', error);
     throw error;
