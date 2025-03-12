@@ -58,8 +58,7 @@ const Tools = ({
             <div className="tooltip">
               <span className="icon">⊕</span>
               <span className="tooltip-text">
-                <strong>Add Neighbors</strong>
-                <p>Finds semantically similar words to your current selection and adds them to your visualization. This helps explore the word embedding space around your chosen words.</p>
+                <p>Finds semantically similar words to your current selection and adds them to your visualization.</p>
               </span>
             </div>
           </button>
@@ -126,22 +125,23 @@ const Tools = ({
         
         .tooltip-text {
           visibility: hidden;
-          width: 250px;
+          width: 220px;
           background-color: #333;
           color: #fff;
           text-align: left;
           border-radius: 6px;
-          padding: 12px;
+          padding: 10px;
           position: absolute;
           z-index: 1;
-          bottom: 125%;
-          left: 50%;
-          transform: translateX(-50%);
+          left: 110%;
+          top: 50%;
+          transform: translateY(-50%);
           opacity: 0;
           transition: opacity 0.3s;
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
           font-weight: normal;
-          font-size: 0.85rem;
+          font-size: 0.8rem;
+          line-height: 1.3;
         }
         
         .tooltip-text::after {
@@ -156,8 +156,14 @@ const Tools = ({
         }
         
         .tooltip-text p {
-          margin: 6px 0 0 0;
-          line-height: 1.4;
+          margin: 4px 0 0 0;
+          line-height: 1.3;
+        }
+        
+        .tooltip-text strong {
+          font-size: 0.85rem;
+          display: block;
+          margin-bottom: 2px;
         }
         
         .tooltip:hover .tooltip-text {
