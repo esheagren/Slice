@@ -2,15 +2,22 @@ import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { createTooltip, removeTooltip } from './VectorTooltip';
-import { getPointColor, hexToThreeColor, createTextSprite } from './VectorUtils';
+import { 
+  getPointColor, 
+  hexToThreeColor, 
+  createTextSprite, 
+  calculateCosineSimilarity, 
+  formatSimilarity 
+} from './VectorUtils';
 
-const VectorGraph3D = ({ coordinates, words, containerRef }) => {
+const VectorGraph3D = ({ coordinates, words, containerRef, rulerActive }) => {
   const canvasRef = useRef(null);
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
   const controlsRef = useRef(null);
   const objectsRef = useRef([]);
   const pointsRef = useRef([]);
+  const rulerLinesRef = useRef([]);
   
   // Set up canvas size based on container
   useEffect(() => {
@@ -52,7 +59,7 @@ const VectorGraph3D = ({ coordinates, words, containerRef }) => {
     };
   }, [containerRef]);
   
-  // Initialize or update 3D scene when coordinates change
+  // Initialize or update 3D scene when coordinates or ruler state changes
   useEffect(() => {
     if (coordinates.length > 0) {
       setup3DScene();
@@ -70,8 +77,18 @@ const VectorGraph3D = ({ coordinates, words, containerRef }) => {
           if (obj.material) obj.material.dispose();
         });
       }
+      
+      // Clean up ruler lines
+      if (rulerLinesRef.current.length > 0) {
+        rulerLinesRef.current.forEach(obj => {
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) obj.material.dispose();
+          if (obj.parent) obj.parent.remove(obj);
+        });
+        rulerLinesRef.current = [];
+      }
     };
-  }, [coordinates]);
+  }, [coordinates, rulerActive]);
   
   // Set up 3D scene
   const setup3DScene = () => {
@@ -126,6 +143,17 @@ const VectorGraph3D = ({ coordinates, words, containerRef }) => {
     
     // Create points from coordinates
     create3DPoints();
+    
+    // Add ruler lines if active
+    if (rulerActive) {
+      addRulerLines();
+    } else {
+      // Remove existing ruler lines
+      rulerLinesRef.current.forEach(line => {
+        if (line.parent) line.parent.remove(line);
+      });
+      rulerLinesRef.current = [];
+    }
     
     // Set up animation loop
     const animate = () => {
@@ -254,6 +282,106 @@ const VectorGraph3D = ({ coordinates, words, containerRef }) => {
     
     // Store point info for raycasting
     pointsRef.current = pointInfos;
+  };
+  
+  // Add ruler lines between primary points
+  const addRulerLines = () => {
+    if (!sceneRef.current || !coordinates || coordinates.length === 0) return;
+    
+    // Clean up existing ruler lines
+    rulerLinesRef.current.forEach(line => {
+      if (line.parent) line.parent.remove(line);
+      if (line.geometry) line.geometry.dispose();
+      if (line.material) line.material.dispose();
+    });
+    rulerLinesRef.current = [];
+    
+    // Filter to only get primary words
+    const primaryPoints = coordinates.filter(point => words.includes(point.word));
+    
+    // Draw lines between each pair of primary points
+    for (let i = 0; i < primaryPoints.length; i++) {
+      for (let j = i + 1; j < primaryPoints.length; j++) {
+        const point1 = primaryPoints[i];
+        const point2 = primaryPoints[j];
+        
+        // Create line geometry
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(point1.x, point1.y, point1.z || 0),
+          new THREE.Vector3(point2.x, point2.y, point2.z || 0)
+        ]);
+        
+        // Create dashed line material
+        const lineMaterial = new THREE.LineDashedMaterial({
+          color: 0xffffff,
+          linewidth: 1,
+          scale: 1,
+          dashSize: 0.1,
+          gapSize: 0.05,
+          opacity: 0.5,
+          transparent: true
+        });
+        
+        // Create line
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        line.computeLineDistances(); // Required for dashed lines
+        sceneRef.current.add(line);
+        rulerLinesRef.current.push(line);
+        
+        // Calculate midpoint for label
+        const midX = (point1.x + point2.x) / 2;
+        const midY = (point1.y + point2.y) / 2;
+        const midZ = ((point1.z || 0) + (point2.z || 0)) / 2;
+        
+        // Extract vectors for similarity calculation
+        const extractVector = (vecStr) => {
+          if (typeof vecStr !== 'string') return null;
+          const matches = vecStr.match(/\[(.*?)\.\.\.]/);
+          if (!matches || !matches[1]) return null;
+          return matches[1].split(',').map(num => parseFloat(num.trim()));
+        };
+        
+        const vec1 = extractVector(point1.truncatedVector);
+        const vec2 = extractVector(point2.truncatedVector);
+        
+        // Calculate similarity
+        let similarityText = "N/A";
+        if (vec1 && vec2) {
+          const similarity = calculateCosineSimilarity(vec1, vec2);
+          similarityText = formatSimilarity(similarity);
+        }
+        
+        // Create text sprite for similarity
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 128;
+        canvas.height = 64;
+        
+        // Draw background
+        context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw text
+        context.font = 'bold 24px Arial';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillStyle = '#ffffff';
+        context.fillText(similarityText, canvas.width / 2, canvas.height / 2);
+        
+        // Create texture and sprite
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.SpriteMaterial({ 
+          map: texture,
+          transparent: true
+        });
+        const sprite = new THREE.Sprite(material);
+        sprite.position.set(midX, midY, midZ);
+        sprite.scale.set(1, 0.5, 1);
+        
+        sceneRef.current.add(sprite);
+        rulerLinesRef.current.push(sprite);
+      }
+    }
   };
   
   // Set up raycasting for tooltips in 3D

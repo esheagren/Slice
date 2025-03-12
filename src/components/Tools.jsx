@@ -10,7 +10,9 @@ const Tools = ({
   loading,
   wordsValid,
   viewMode,
-  setViewMode
+  setViewMode,
+  rulerActive,
+  setRulerActive
 }) => {
   
   // Add this new function to handle the Add Neighbors button click
@@ -45,6 +47,11 @@ const Tools = ({
     setViewMode(viewMode === '2D' ? '3D' : '2D');
   };
 
+  // Add this new function to handle the Ruler button click
+  const toggleRuler = () => {
+    setRulerActive(!rulerActive);
+  };
+
   return (
     <div className="tools-container">
       <div className="tools-row">
@@ -59,6 +66,21 @@ const Tools = ({
               <span className="icon">⊕</span>
               <span className="tooltip-text">
                 <p>Finds semantically similar words to your current selection and adds them to your visualization.</p>
+              </span>
+            </div>
+          </button>
+          
+          {/* Add Ruler Button */}
+          <button 
+            className={`tool-button ${rulerActive ? 'active' : ''}`} 
+            onClick={toggleRuler}
+            disabled={!wordsValid || loading || words.length < 2}
+            aria-label="Measure Distance"
+          >
+            <div className="tooltip">
+              <span className="icon">📏</span>
+              <span className="tooltip-text">
+                <p>Measures semantic distance between words using cosine similarity.</p>
               </span>
             </div>
           </button>
@@ -193,6 +215,12 @@ const Tools = ({
         .view-button:active {
           transform: translateY(0);
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tool-button.active {
+          background: linear-gradient(135deg, rgba(66, 133, 244, 0.8) 0%, rgba(52, 168, 83, 0.8) 100%);
+          transform: translateY(1px);
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
       `}</style>
     </div>

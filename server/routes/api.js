@@ -103,7 +103,9 @@ router.post('/getVectorCoordinates', async (req, res) => {
     const result = vectors.map((item, index) => {
       const point = {
         word: item.word,
-        truncatedVector: `[${item.vector.slice(0, 5).join(', ')}...]`
+        truncatedVector: `[${item.vector.slice(0, 5).join(', ')}...]`,
+        // Include full vector for similarity calculations
+        fullVector: item.vector
       };
       
       // Add coordinates based on dimensions

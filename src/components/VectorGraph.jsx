@@ -6,10 +6,19 @@ import VectorGraph3D from './visualization/VectorGraph3D';
 import LoadingOverlay from './visualization/LoadingOverlay';
 import ErrorOverlay from './visualization/ErrorOverlay';
 
-const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://localhost:5001', viewMode = '2D', setViewMode }) => {
+const VectorGraph = ({ 
+  words, 
+  midpointWords, 
+  numMidpoints, 
+  serverUrl = 'http://localhost:5001', 
+  viewMode = '2D', 
+  setViewMode,
+  rulerActive // Receive as prop instead of managing state
+}) => {
   const [coordinates, setCoordinates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [midpointClusters, setMidpointClusters] = useState([]);
   
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
@@ -134,24 +143,17 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
           <VectorGraph2D 
             coordinates={coordinates} 
             words={words} 
-            containerRef={containerRef} 
+            containerRef={containerRef}
+            rulerActive={rulerActive}
           />
         ) : (
           <VectorGraph3D 
             coordinates={coordinates} 
             words={words} 
-            containerRef={containerRef} 
+            containerRef={containerRef}
+            rulerActive={rulerActive}
           />
         )}
-      </div>
-      
-      {/* Move the ViewButton outside of any elements that might cover it */}
-      <div className="controls-overlay">
-        {setViewMode && <ViewButton 
-          viewMode={viewMode} 
-          setViewMode={setViewMode} 
-          disabled={loading || !words || words.length === 0} 
-        />}
       </div>
       
       <style jsx>{`
@@ -173,18 +175,6 @@ const VectorGraph = ({ words, midpointWords, numMidpoints, serverUrl = 'http://l
           background-color: transparent;
           border-radius: 8px;
         }
-        
-        .controls-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          pointer-events: none; /* Allow clicks to pass through to canvas */
-          z-index: 50; /* Higher than canvas but lower than loading overlay */
-        }
-        
-        /* The ViewButton itself will have pointer-events: auto to capture clicks */
       `}</style>
     </div>
   );

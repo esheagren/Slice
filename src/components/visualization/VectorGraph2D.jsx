@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createTooltip, removeTooltip } from './VectorTooltip';
-import { getPointColor } from './VectorUtils';
+import { getPointColor, calculateCosineSimilarity, formatSimilarity } from './VectorUtils';
 import SimpleLoadingAnimation from './SimpleLoadingAnimation';
 
-const VectorGraph2D = ({ coordinates, words, containerRef }) => {
+const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
   const canvasRef = useRef(null);
   const pointsRef = useRef([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,7 +59,7 @@ const VectorGraph2D = ({ coordinates, words, containerRef }) => {
     return () => {
       window.removeEventListener('resize', resizeCanvas);
     };
-  }, [coordinates, containerRef]);
+  }, [coordinates, containerRef, rulerActive]);
   
   const drawVisualization = () => {
     if (!coordinates.length || !canvasRef.current) {
@@ -146,6 +146,72 @@ const VectorGraph2D = ({ coordinates, words, containerRef }) => {
         ctx.fillText(point.word, x, y - radius - 5);
       }
     });
+    
+    // After drawing all points, draw ruler lines if active
+    if (rulerActive && words.length >= 2) {
+      drawRulerLines(ctx, pointsRef.current);
+    }
+  };
+  
+  // Function to draw ruler lines between points
+  const drawRulerLines = (ctx, points) => {
+    // Filter to only get primary words
+    const primaryPoints = points.filter(point => point.isPrimary);
+    
+    // Draw lines between each pair of primary points
+    for (let i = 0; i < primaryPoints.length; i++) {
+      for (let j = i + 1; j < primaryPoints.length; j++) {
+        const point1 = primaryPoints[i];
+        const point2 = primaryPoints[j];
+        
+        // Draw line
+        ctx.beginPath();
+        ctx.moveTo(point1.x, point1.y);
+        ctx.lineTo(point2.x, point2.y);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 3]); // Dashed line
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset to solid line
+        
+        // Calculate midpoint for label
+        const midX = (point1.x + point2.x) / 2;
+        const midY = (point1.y + point2.y) / 2;
+        
+        // Find the original vectors for these points
+        const vector1 = coordinates.find(c => c.word === point1.word)?.truncatedVector;
+        const vector2 = coordinates.find(c => c.word === point2.word)?.truncatedVector;
+        
+        // Calculate similarity if we have the vectors
+        let similarityText = "No vector data";
+        if (vector1 && vector2) {
+          // Extract numeric values from truncated vector strings
+          const extractVector = (vecStr) => {
+            if (typeof vecStr !== 'string') return null;
+            const matches = vecStr.match(/\[(.*?)\.\.\.]/);
+            if (!matches || !matches[1]) return null;
+            return matches[1].split(',').map(num => parseFloat(num.trim()));
+          };
+          
+          const vec1 = extractVector(vector1);
+          const vec2 = extractVector(vector2);
+          
+          if (vec1 && vec2) {
+            const similarity = calculateCosineSimilarity(vec1, vec2);
+            similarityText = formatSimilarity(similarity);
+          }
+        }
+        
+        // Draw similarity label
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(midX - 30, midY - 10, 60, 20);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(similarityText, midX, midY);
+      }
+    }
   };
   
   // Handle mouse interactions

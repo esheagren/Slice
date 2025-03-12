@@ -57,4 +57,41 @@ export const createTextSprite = (text, isPrimary = false) => {
   sprite.scale.set(isPrimary ? 2 : 1.5, isPrimary ? 0.5 : 0.4, 1);
   
   return sprite;
+};
+
+// Calculate cosine similarity between two vectors
+export const calculateCosineSimilarity = (vector1, vector2) => {
+  if (!vector1 || !vector2 || vector1.length !== vector2.length) {
+    return null;
+  }
+  
+  // Calculate dot product
+  let dotProduct = 0;
+  let magnitude1 = 0;
+  let magnitude2 = 0;
+  
+  for (let i = 0; i < vector1.length; i++) {
+    dotProduct += vector1[i] * vector2[i];
+    magnitude1 += vector1[i] * vector1[i];
+    magnitude2 += vector2[i] * vector2[i];
+  }
+  
+  magnitude1 = Math.sqrt(magnitude1);
+  magnitude2 = Math.sqrt(magnitude2);
+  
+  // Avoid division by zero
+  if (magnitude1 === 0 || magnitude2 === 0) {
+    return 0;
+  }
+  
+  // Calculate cosine similarity
+  return dotProduct / (magnitude1 * magnitude2);
+};
+
+// Format similarity value for display
+export const formatSimilarity = (similarity) => {
+  if (similarity === null) return 'N/A';
+  
+  // Convert to percentage with 2 decimal places
+  return `${(similarity * 100).toFixed(2)}%`;
 }; 

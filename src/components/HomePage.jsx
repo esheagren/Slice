@@ -16,6 +16,7 @@ const HomePage = () => {
   const [numNeighbors, setNumNeighbors] = useState(5); // Default to 5 neighbors
   const [viewMode, setViewMode] = useState('2D'); // Default to 2D view
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [rulerActive, setRulerActive] = useState(false);
 
   const handleWordSelect = (word) => {
     if (!words.includes(word)) {
@@ -133,6 +134,8 @@ const HomePage = () => {
                          response.data.words.some(word => word.exists)}
               viewMode={viewMode}
               setViewMode={setViewMode}
+              rulerActive={rulerActive}
+              setRulerActive={setRulerActive}
             />
           </div>
           
@@ -143,6 +146,8 @@ const HomePage = () => {
               numMidpoints={numNeighbors}
               serverUrl={serverUrl}
               viewMode={viewMode}
+              setViewMode={setViewMode}
+              rulerActive={rulerActive}
             />
           </div>
         </div>
