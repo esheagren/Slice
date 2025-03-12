@@ -137,6 +137,12 @@ const WordInput = ({
         />
       </div>
       
+      {words.length === 1 && (
+        <div className="notification-message">
+          Please add at least one more word to see relationships
+        </div>
+      )}
+      
       {showWordTags && (
         <div className="words-list">
           {words.map((word, index) => (
@@ -232,6 +238,16 @@ const WordInput = ({
         .remove-word-btn:hover {
           color: #FF5757;
           transform: scale(1.2);
+        }
+        
+        .notification-message {
+          font-size: 14px;
+          color: #FFC837;
+          margin-bottom: 12px;
+          padding: 6px 10px;
+          background-color: rgba(255, 200, 55, 0.1);
+          border-radius: 6px;
+          text-align: center;
         }
       `}</style>
     </div>
