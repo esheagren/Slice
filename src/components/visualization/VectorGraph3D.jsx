@@ -18,8 +18,8 @@ const VectorGraph3D = ({ coordinates, words, containerRef }) => {
       if (!containerRef.current || !canvasRef.current) return;
       
       const container = containerRef.current;
-      const width = container.clientWidth - 40; // 20px padding on each side
-      const height = container.clientHeight - 40;
+      const width = container.clientWidth - 20; // 20px padding on each side
+      const height = container.clientHeight - 20;
       
       // Resize 3D canvas
       canvasRef.current.width = width;

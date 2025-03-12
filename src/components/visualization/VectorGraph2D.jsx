@@ -95,7 +95,7 @@ const VectorGraph2D = ({ coordinates, words, containerRef }) => {
     });
     
     // Add padding
-    const padding = 50;
+    const padding = 120;
     const plotWidth = canvas.width - (padding * 2);
     const plotHeight = canvas.height - (padding * 2);
     
@@ -110,7 +110,17 @@ const VectorGraph2D = ({ coordinates, words, containerRef }) => {
       const x = scaleX(point.x);
       const y = scaleY(point.y);
       const isPrimary = words.includes(point.word);
-      const radius = isPrimary ? 8 : 5;
+      const isContextSample = point.isContextSample === true;
+      
+      // Determine radius based on point type
+      let radius;
+      if (isPrimary) {
+        radius = 8; // Primary words (user input)
+      } else if (isContextSample) {
+        radius = 3; // Context sample words (smaller)
+      } else {
+        radius = 5; // Related words
+      }
       
       // Store point info for interaction
       pointsRef.current.push({
@@ -118,20 +128,23 @@ const VectorGraph2D = ({ coordinates, words, containerRef }) => {
         x,
         y,
         radius,
-        isPrimary
+        isPrimary,
+        isContextSample
       });
       
       // Draw point
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fillStyle = getPointColor(point.word, words, isPrimary);
+      ctx.fillStyle = getPointColor(point.word, words, isPrimary, isContextSample);
       ctx.fill();
       
-      // Draw label
-      ctx.font = isPrimary ? 'bold 14px Arial' : '12px Arial';
-      ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'center';
-      ctx.fillText(point.word, x, y - radius - 5);
+      // Draw label only for primary words and related words (not context samples)
+      if (!isContextSample || isPrimary) {
+        ctx.font = isPrimary ? 'bold 14px Arial' : '12px Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.fillText(point.word, x, y - radius - 5);
+      }
     });
   };
   
