@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 const Tools = ({ 
   words, 
@@ -8,7 +8,9 @@ const Tools = ({
   setLoading,
   setError,
   loading,
-  wordsValid
+  wordsValid,
+  viewMode,
+  setViewMode
 }) => {
   
   // Add this new function to handle the Add Neighbors button click
@@ -56,55 +58,69 @@ const Tools = ({
         
         // Update the clusters with the context results
         setMidpointClusters(contextClusters);
-      } catch (error) {
-        console.error('Error adding context:', error);
-        setError('Failed to add context words');
       } finally {
         setLoading(false);
       }
     }
   };
 
+  // Toggle view mode between 2D and 3D
+  const toggleViewMode = () => {
+    setViewMode(viewMode === '2D' ? '3D' : '2D');
+  };
+
   return (
     <div className="tools-container">
-      <div className="tools-row primary-tools">
-        <button 
-          className="tool-button" 
-          onClick={handleAddNeighbors}
-          disabled={!wordsValid || loading}
-        >
-          Add Neighbors
-        </button>
-        <button 
-          className="tool-button" 
-          onClick={handleAddContext}
-          disabled={!wordsValid || loading}
-        >
-          Add Context
-        </button>
+      <div className="tools-row">
+        <div className="left-tools">
+          <button 
+            className="tool-button" 
+            onClick={handleAddNeighbors}
+            disabled={!wordsValid || loading}
+          >
+            Add Neighbors
+          </button>
+          <button 
+            className="tool-button" 
+            onClick={handleAddContext}
+            disabled={!wordsValid || loading}
+          >
+            Add Context
+          </button>
+        </div>
+        
+        <div className="right-tools">
+          <button 
+            className="view-button"
+            onClick={toggleViewMode}
+          >
+            {viewMode === '2D' ? '3D View' : '2D View'}
+          </button>
+        </div>
       </div>
       
       <style jsx>{`
         .tools-container {
-          padding: 0.75rem;
-          background-color: #1a1a1c;
-          border-radius: 8px;
-          margin-top: 1rem;
-          margin-bottom: 1rem;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          width: 100%;
         }
         
         .tools-row {
           display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        
+        .left-tools {
+          display: flex;
           gap: 0.75rem;
         }
         
-        .primary-tools {
-          justify-content: space-between;
+        .right-tools {
+          display: flex;
+          justify-content: flex-end;
         }
         
         .tool-button {
-          flex: 1;
           padding: 0.75rem 1rem;
           border-radius: 6px;
           background: linear-gradient(135deg, rgba(255, 157, 66, 0.8) 0%, rgba(255, 200, 55, 0.8) 100%);
@@ -131,6 +147,30 @@ const Tools = ({
         .tool-button:disabled {
           opacity: 0.5;
           cursor: not-allowed;
+        }
+        
+        .view-button {
+          padding: 0.75rem 1rem;
+          border-radius: 6px;
+          background: #2a2a2c;
+          color: white;
+          border: none;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-size: 0.95rem;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .view-button:hover {
+          background: #3a3a3c;
+          transform: translateY(-1px);
+          box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .view-button:active {
+          transform: translateY(0);
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
       `}</style>
     </div>

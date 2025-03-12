@@ -66,20 +66,6 @@ const HomePage = () => {
             setRelatedClusters={setRelatedClusters}
           />
           
-          <div className="tools-wrapper">
-            <Tools
-              words={words}
-              serverUrl={serverUrl}
-              numMidpoints={numNeighbors}
-              setMidpointClusters={setRelatedClusters}
-              setLoading={setLoading}
-              setError={setError}
-              loading={loading}
-              wordsValid={response && response.data && response.data.words && 
-                         response.data.words.some(word => word.exists)}
-            />
-          </div>
-          
           {error && (
             <div className="error-message">
               {error}
@@ -101,6 +87,22 @@ const HomePage = () => {
         </div>
         
         <div className="content-area">
+          <div className="tools-bar">
+            <Tools
+              words={words}
+              serverUrl={serverUrl}
+              numMidpoints={numNeighbors}
+              setMidpointClusters={setRelatedClusters}
+              setLoading={setLoading}
+              setError={setError}
+              loading={loading}
+              wordsValid={response && response.data && response.data.words && 
+                         response.data.words.some(word => word.exists)}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+            />
+          </div>
+          
           <div className="graph-area">
             <VectorGraph 
               words={words}
@@ -141,16 +143,17 @@ const HomePage = () => {
           gap: 1rem;
         }
         
-        .tools-wrapper {
-          margin-top: 0.5rem;
-          margin-bottom: 0.5rem;
-        }
-        
         .content-area {
           flex: 1;
           display: flex;
           flex-direction: column;
           overflow: hidden;
+        }
+        
+        .tools-bar {
+          padding: 0.5rem 1rem;
+          background-color: #0f0f10;
+          border-bottom: 1px solid #2a2a2c;
         }
         
         .graph-area {
