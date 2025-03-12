@@ -16,7 +16,7 @@ const LoadingAnimation = ({ width = 200, height = 200 }) => {
     
     const draw = (timestamp) => {
       // Clear canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    //   ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       // Center of canvas
       const centerX = canvas.width / 2;
@@ -29,13 +29,13 @@ const LoadingAnimation = ({ width = 200, height = 200 }) => {
       const pulseSize = Math.sin(time) * 0.1 + 0.9;
       
       // Draw a subtle particle field
-      const numParticles = 40;
-      const maxRadius = Math.min(width, height) * 0.3;
+      const numParticles = 200;
+      const maxRadius = Math.min(width, height) * 1;
       
       for (let i = 0; i < numParticles; i++) {
         // Calculate particle position based on time and index
         const particleAngle = (i / numParticles) * Math.PI * 2 + time;
-        const distance = maxRadius * (0.5 + 0.5 * Math.sin(particleAngle * 2 + time));
+        const distance = maxRadius * (0.2 + 0.8 * Math.sin(particleAngle * 2 + time));
         
         // Position on a spiral pattern
         const x = centerX + Math.cos(particleAngle) * distance;
@@ -45,7 +45,7 @@ const LoadingAnimation = ({ width = 200, height = 200 }) => {
         const particleSize = 1.5 * (0.5 + 0.5 * Math.sin(particleAngle * 3 + time));
         
         // Opacity based on position
-        const opacity = 0.1 + 0.2 * Math.sin(particleAngle + time);
+        const opacity = 0.2 + 0.12 * Math.sin(particleAngle + time);
         
         // Draw particle
         ctx.beginPath();
@@ -57,9 +57,9 @@ const LoadingAnimation = ({ width = 200, height = 200 }) => {
       // Draw a subtle glow in the center
       const gradient = ctx.createRadialGradient(
         centerX, centerY, 0,
-        centerX, centerY, maxRadius * 0.5
+        centerX, centerY, maxRadius * 0.7
       );
-      gradient.addColorStop(0, 'rgba(255, 140, 0, 0.05)');
+      gradient.addColorStop(0, 'rgba(255, 140, 0, 0.04)');
       gradient.addColorStop(0.5, 'rgba(255, 140, 0, 0.02)');
       gradient.addColorStop(1, 'rgba(255, 140, 0, 0)');
       
