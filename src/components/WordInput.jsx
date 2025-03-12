@@ -9,7 +9,8 @@ const WordInput = ({
   setLoading, 
   setError, 
   loading,
-  setRelatedClusters 
+  setRelatedClusters,
+  showWordTags = true
 }) => {
   const [newWord, setNewWord] = useState('');
   const [invalidWords, setInvalidWords] = useState([]);
@@ -136,24 +137,26 @@ const WordInput = ({
         />
       </div>
       
-      <div className="words-list">
-        {words.map((word, index) => (
-          <div 
-            key={index} 
-            className={`word-tag ${invalidWords.includes(word) ? 'invalid-word' : ''}`}
-          >
-            <span>{word}</span>
-            <button 
-              type="button" 
-              className="remove-word-btn"
-              onClick={() => removeWord(index)}
-              disabled={loading}
+      {showWordTags && (
+        <div className="words-list">
+          {words.map((word, index) => (
+            <div 
+              key={index} 
+              className={`word-tag ${invalidWords.includes(word) ? 'invalid-word' : ''}`}
             >
-              ×
-            </button>
-          </div>
-        ))}
-      </div>
+              <span>{word}</span>
+              <button 
+                type="button" 
+                className="remove-word-btn"
+                onClick={() => removeWord(index)}
+                disabled={loading}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
       
       <style jsx>{`
         .word-input-container {

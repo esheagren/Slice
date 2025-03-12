@@ -15,11 +15,10 @@ const HomePage = () => {
   const [serverUrl, setServerUrl] = useState('http://localhost:5001');
   const [numNeighbors, setNumNeighbors] = useState(5); // Default to 5 neighbors
   const [viewMode, setViewMode] = useState('2D'); // Default to 2D view
-  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const handleWordSelect = (word) => {
-    // Check if word already exists (case insensitive comparison)
-    if (!words.some(w => w.toLowerCase() === word.toLowerCase())) {
+    if (!words.includes(word)) {
       const updatedWords = [...words, word];
       setWords(updatedWords);
       
@@ -66,7 +65,39 @@ const HomePage = () => {
             setError={setError}
             loading={loading}
             setRelatedClusters={setRelatedClusters}
+            showWordTags={false}
           />
+          
+          <div className="compact-suggestions-toggle">
+            <button 
+              className="small-toggle-btn" 
+              onClick={() => setShowSuggestions(!showSuggestions)}
+            >
+              {showSuggestions ? 'Hide Suggestions' : 'Show Suggestions'}
+            </button>
+          </div>
+          
+          <div className="words-container">
+            {words.length > 0 && (
+              <div className="selected-words">
+                {words.map((word, index) => (
+                  <div key={`word-${index}`} className="word-tag">
+                    {word}
+                    <button 
+                      className="remove-word" 
+                      onClick={() => {
+                        const newWords = [...words];
+                        newWords.splice(index, 1);
+                        setWords(newWords);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           
           {error && (
             <div className="error-message">
@@ -74,29 +105,18 @@ const HomePage = () => {
             </div>
           )}
           
-          {response && (
-            <div className="response-container">
-              <p className="response-message">{response.message}</p>
-            </div>
-          )}
+          <div className="sidebar-spacer"></div>
           
-          <div className="suggestions-section">
-            <button 
-              className="suggestions-toggle" 
-              onClick={() => setShowSuggestions(!showSuggestions)}
-            >
-              {showSuggestions ? 'Hide Suggestions' : 'Show Suggestions'}
-            </button>
-            
-            {showSuggestions && (
+          {showSuggestions && (
+            <div className="suggestions-wrapper">
               <SuggestedWords 
                 onWordSelect={handleWordSelect}
                 currentWords={words}
                 numSuggestions={8}
                 serverUrl={serverUrl}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
         
         <div className="content-area">
@@ -152,7 +172,73 @@ const HomePage = () => {
           background-color: #0f0f10;
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          gap: 0.75rem;
+        }
+        
+        .compact-suggestions-toggle {
+          display: flex;
+          justify-content: flex-start;
+          margin-top: 0.25rem;
+          margin-bottom: 0.5rem;
+        }
+        
+        .small-toggle-btn {
+          background-color: transparent;
+          color: #FFC837;
+          border: 1px solid #FFC837;
+          border-radius: 4px;
+          padding: 0.25rem 0.75rem;
+          font-size: 0.8rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        
+        .small-toggle-btn:hover {
+          background-color: rgba(255, 200, 55, 0.1);
+        }
+        
+        .words-container {
+          max-height: 200px;
+          overflow-y: auto;
+          margin-bottom: 0.5rem;
+        }
+        
+        .selected-words {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+        
+        .word-tag {
+          display: inline-flex;
+          align-items: center;
+          background-color: #2a2a2c;
+          border-radius: 16px;
+          padding: 0.25rem 0.75rem;
+          font-size: 0.9rem;
+        }
+        
+        .remove-word {
+          background: none;
+          border: none;
+          color: #FF5757;
+          margin-left: 0.5rem;
+          cursor: pointer;
+          font-size: 1rem;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .sidebar-spacer {
+          min-height: 20px;
+          flex-grow: 1;
+        }
+        
+        .suggestions-wrapper {
+          margin-top: 0.5rem;
+          margin-bottom: 1rem;
         }
         
         .content-area {
@@ -170,12 +256,11 @@ const HomePage = () => {
         
         .graph-area {
           flex: 1;
-          min-height: 500px; /* Ensure minimum height */
+          min-height: 500px;
           position: relative;
           overflow: hidden;
         }
         
-        /* Make sure the VectorGraph component fills its container */
         .graph-area > div {
           position: absolute;
           top: 0;
@@ -190,29 +275,6 @@ const HomePage = () => {
           background-color: rgba(255, 87, 87, 0.1);
           border-radius: 4px;
           margin-top: 0.5rem;
-        }
-        
-        .response-container {
-          margin-top: 0.5rem;
-        }
-        
-        .response-message {
-          color: #FFC837;
-          font-size: 0.9rem;
-        }
-        
-        .suggestions-section {
-          margin-top: 1rem;
-        }
-        
-        .suggestions-toggle {
-          background: none;
-          border: none;
-          color: #FFC837;
-          font: inherit;
-          cursor: pointer;
-          outline: inherit;
-          padding: 0;
         }
       `}</style>
     </div>
