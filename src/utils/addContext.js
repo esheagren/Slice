@@ -20,7 +20,7 @@ export const addContext = async (words, count = 50, serverUrl) => {
       parent2: null,
       isContextSample: true,
       words: response.data.data.words.map(word => ({
-        word,
+        word: word,
         isContextSample: true
       }))
     };
