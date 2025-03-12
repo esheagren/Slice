@@ -1,10 +1,39 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import LoadingAnimation from './LoadingAnimation';
 
 const LoadingOverlay = () => {
+  const overlayRef = useRef(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (!overlayRef.current) return;
+    
+    // Set initial dimensions
+    updateDimensions();
+    
+    // Add resize listener
+    window.addEventListener('resize', updateDimensions);
+    
+    return () => {
+      window.removeEventListener('resize', updateDimensions);
+    };
+  }, []);
+  
+  const updateDimensions = () => {
+    if (!overlayRef.current) return;
+    
+    setDimensions({
+      width: overlayRef.current.clientWidth,
+      height: overlayRef.current.clientHeight
+    });
+  };
+
   return (
-    <div className="loading-overlay">
-      <LoadingAnimation />
+    <div className="loading-overlay" ref={overlayRef}>
+      <LoadingAnimation 
+        width={dimensions.width} 
+        height={dimensions.height} 
+      />
       
       <style jsx>{`
         .loading-overlay {

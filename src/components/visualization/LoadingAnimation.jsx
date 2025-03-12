@@ -8,15 +8,20 @@ const LoadingAnimation = ({ width = 200, height = 200 }) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
+    // Make sure we have valid dimensions
+    const canvasWidth = width || 200;
+    const canvasHeight = height || 200;
+    
     // Set canvas dimensions
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
     
     let time = 0;
     
     const draw = (timestamp) => {
-      // Clear canvas
-    //   ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Clear canvas with a very faint background to create trails
+      ctx.fillStyle = 'rgba(26, 26, 46, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       // Center of canvas
       const centerX = canvas.width / 2;
@@ -28,9 +33,13 @@ const LoadingAnimation = ({ width = 200, height = 200 }) => {
       // Create a subtle pulsing effect
       const pulseSize = Math.sin(time) * 0.1 + 0.9;
       
-      // Draw a subtle particle field
-      const numParticles = 200;
-      const maxRadius = Math.min(width, height) * 1;
+      // Draw a subtle particle field - adjust number of particles based on canvas size
+      const canvasArea = canvasWidth * canvasHeight;
+      const baseParticles = 200;
+      const scaleFactor = Math.min(2, Math.max(0.5, canvasArea / (800 * 600)));
+      const numParticles = Math.floor(baseParticles * scaleFactor);
+      
+      const maxRadius = Math.min(canvasWidth, canvasHeight) * 0.45;
       
       for (let i = 0; i < numParticles; i++) {
         // Calculate particle position based on time and index
@@ -54,13 +63,13 @@ const LoadingAnimation = ({ width = 200, height = 200 }) => {
         ctx.fill();
       }
       
-      // Draw a subtle glow in the center
+      // Draw a very subtle glow in the center (dimmer than before)
       const gradient = ctx.createRadialGradient(
         centerX, centerY, 0,
         centerX, centerY, maxRadius * 0.7
       );
-      gradient.addColorStop(0, 'rgba(255, 140, 0, 0.04)');
-      gradient.addColorStop(0.5, 'rgba(255, 140, 0, 0.02)');
+      gradient.addColorStop(0, 'rgba(255, 140, 0, 0.02)'); // Reduced from 0.04 to 0.02
+      gradient.addColorStop(0.5, 'rgba(255, 140, 0, 0.01)'); // Reduced from 0.02 to 0.01
       gradient.addColorStop(1, 'rgba(255, 140, 0, 0)');
       
       ctx.beginPath();
@@ -94,6 +103,11 @@ const LoadingAnimation = ({ width = 200, height = 200 }) => {
           width: 100%;
           height: 100%;
           background-color: transparent;
+        }
+        
+        canvas {
+          width: 100%;
+          height: 100%;
         }
       `}</style>
     </div>
