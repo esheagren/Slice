@@ -93,6 +93,7 @@ const Tools = ({
           <button 
             className="view-button"
             onClick={toggleViewMode}
+            disabled={loading || !wordsValid || words.length === 0}
           >
             {viewMode === '2D' ? '3D View' : '2D View'}
           </button>

@@ -110,7 +110,6 @@ const HomePage = () => {
               numMidpoints={numNeighbors}
               serverUrl={serverUrl}
               viewMode={viewMode}
-              setViewMode={setViewMode}
             />
           </div>
         </div>
