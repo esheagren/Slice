@@ -53,8 +53,15 @@ const Tools = ({
             className="tool-button" 
             onClick={handleAddNeighbors}
             disabled={!wordsValid || loading}
+            aria-label="Add Neighbors"
           >
-            Add Neighbors
+            <div className="tooltip">
+              <span className="icon">⊕</span>
+              <span className="tooltip-text">
+                <strong>Add Neighbors</strong>
+                <p>Finds semantically similar words to your current selection and adds them to your visualization. This helps explore the word embedding space around your chosen words.</p>
+              </span>
+            </div>
           </button>
         </div>
         
@@ -101,22 +108,61 @@ const Tools = ({
           transition: all 0.2s ease;
           font-size: 0.95rem;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         
-        .tool-button:hover:not(:disabled) {
-          background: linear-gradient(135deg, rgba(255, 157, 66, 1) 0%, rgba(255, 200, 55, 1) 100%);
-          transform: translateY(-1px);
-          box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+        .icon {
+          font-size: 1.5rem;
+          display: inline-block;
         }
         
-        .tool-button:active:not(:disabled) {
-          transform: translateY(0);
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        .tooltip {
+          position: relative;
+          display: inline-block;
         }
         
-        .tool-button:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
+        .tooltip-text {
+          visibility: hidden;
+          width: 250px;
+          background-color: #333;
+          color: #fff;
+          text-align: left;
+          border-radius: 6px;
+          padding: 12px;
+          position: absolute;
+          z-index: 1;
+          bottom: 125%;
+          left: 50%;
+          transform: translateX(-50%);
+          opacity: 0;
+          transition: opacity 0.3s;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+          font-weight: normal;
+          font-size: 0.85rem;
+        }
+        
+        .tooltip-text::after {
+          content: "";
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          margin-left: -5px;
+          border-width: 5px;
+          border-style: solid;
+          border-color: #333 transparent transparent transparent;
+        }
+        
+        .tooltip-text p {
+          margin: 6px 0 0 0;
+          line-height: 1.4;
+        }
+        
+        .tooltip:hover .tooltip-text {
+          visibility: visible;
+          opacity: 1;
         }
         
         .view-button {
