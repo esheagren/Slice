@@ -240,6 +240,63 @@ router.post('/checkWord', async (req, res) => {
   }
 });
 
+// Endpoint to find analogies (A is to B as C is to ?)
+router.post('/findAnalogy', async (req, res) => {
+  try {
+    const { word1, word2, word3, numResults = 5 } = req.body;
+    
+    console.log(`Processing analogy request: ${word1} is to ${word2} as ${word3} is to ?`);
+    
+    if (!word1 || !word2 || !word3) {
+      return res.status(400).json({ error: 'Three words are required for analogy' });
+    }
+    
+    // Check if all words exist
+    if (!embeddingService.wordExists(word1)) {
+      return res.status(404).json({ error: `Word "${word1}" not found in vocabulary` });
+    }
+    
+    if (!embeddingService.wordExists(word2)) {
+      return res.status(404).json({ error: `Word "${word2}" not found in vocabulary` });
+    }
+    
+    if (!embeddingService.wordExists(word3)) {
+      return res.status(404).json({ error: `Word "${word3}" not found in vocabulary` });
+    }
+    
+    // Get vectors for all words
+    const vector1 = embeddingService.getWordVector(word1);
+    const vector2 = embeddingService.getWordVector(word2);
+    const vector3 = embeddingService.getWordVector(word3);
+    
+    // Calculate analogy vector: (word2 - word1) + word3
+    const analogyVector = embeddingService.calculateAnalogy(vector1, vector2, vector3);
+    
+    // Find nearest words to the analogy vector
+    const nearestWords = embeddingService.findNearestNeighbors(analogyVector, numResults + 3);
+    
+    // Filter out the input words from results
+    const filteredResults = nearestWords.filter(result => 
+      result.word !== word1 && 
+      result.word !== word2 && 
+      result.word !== word3
+    ).slice(0, numResults);
+    
+    console.log(`Found ${filteredResults.length} analogy results`);
+    
+    res.json({
+      message: 'Analogy calculated successfully',
+      data: {
+        analogy: `${word1} is to ${word2} as ${word3} is to ?`,
+        results: filteredResults
+      }
+    });
+  } catch (error) {
+    console.error('Error finding analogy:', error);
+    res.status(500).json({ error: 'Failed to calculate analogy' });
+  }
+});
+
 // Helper function to generate appropriate response message
 function generateResponseMessage(word1, word2, word1Exists, word2Exists) {
   if (!word1Exists && !word2Exists) {

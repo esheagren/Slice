@@ -58,10 +58,6 @@ const VectorGraph = ({
           dimensions: viewMode === '3D' ? 3 : 2
         });
         
-        // Now fetch the actual vector data for each word
-
-        // ... continuing from where we left off
-
         // Now fetch the actual vector data for each word for the tooltips
         const vectorPromises = uniqueWords.map(async (word) => {
           try {
@@ -83,9 +79,18 @@ const VectorGraph = ({
         
         // Combine coordinate data with vector data
         const coordinatesWithVectors = response.data.data.map(point => {
+          // Check if this point is part of an analogy result
+          const analogyCluster = midpointWords.find(cluster => 
+            cluster.isAnalogy && 
+            cluster.words.some(w => w.word === point.word)
+          );
+          
+          const isAnalogy = !!analogyCluster;
+          
           return {
             ...point,
-            truncatedVector: vectorMap[point.word] || `Vector for ${point.word}`
+            truncatedVector: vectorMap[point.word] || `Vector for ${point.word}`,
+            isAnalogy
           };
         });
         

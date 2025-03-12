@@ -147,6 +147,32 @@ class EmbeddingService {
     
     return Math.sqrt(sum);
   }
+
+  calculateAnalogy(vector1, vector2, vector3) {
+    // Compute analogy vector: (word2 - word1) + word3
+    const analogyVector = new Array(this.dimensions);
+    
+    for (let i = 0; i < this.dimensions; i++) {
+      // Calculate the relationship vector (word2 - word1)
+      const relationshipComponent = vector2[i] - vector1[i];
+      
+      // Apply the relationship to word3
+      analogyVector[i] = vector3[i] + relationshipComponent;
+    }
+    
+    // Normalize the vector (optional but recommended)
+    const magnitude = Math.sqrt(
+      analogyVector.reduce((sum, val) => sum + val * val, 0)
+    );
+    
+    if (magnitude > 0) {
+      for (let i = 0; i < this.dimensions; i++) {
+        analogyVector[i] /= magnitude;
+      }
+    }
+    
+    return analogyVector;
+  }
 }
 
 // Create a singleton instance

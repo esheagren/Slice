@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import AnalogyToolbar from './AnalogyToolbar';
 
 const Tools = ({ 
   words, 
@@ -14,6 +15,8 @@ const Tools = ({
   rulerActive,
   setRulerActive
 }) => {
+  
+  const [showAnalogyTool, setShowAnalogyTool] = useState(false);
   
   // Add this new function to handle the Add Neighbors button click
   const handleAddNeighbors = async () => {
@@ -52,6 +55,13 @@ const Tools = ({
     setRulerActive(!rulerActive);
   };
 
+  // Update function name and state variable
+  const toggleAnalogyTool = () => {
+    console.log("Analogy button clicked, current state:", showAnalogyTool);
+    setShowAnalogyTool(!showAnalogyTool);
+    console.log("New state should be:", !showAnalogyTool);
+  };
+
   return (
     <div className="tools-container">
       <div className="tools-row">
@@ -84,6 +94,22 @@ const Tools = ({
               </span>
             </div>
           </button>
+          
+          {/* Add Analogy Button */}
+          <button 
+            className={`tool-button ${showAnalogyTool ? 'active' : ''}`}
+            onClick={toggleAnalogyTool}
+            disabled={!wordsValid || loading || words.length < 3}
+            aria-label="Explore Analogies"
+            title={words.length < 3 ? "Need at least 3 words for analogies" : "Explore word analogies"}
+          >
+            <div className="tooltip">
+              <span className="icon">🔄</span>
+              <span className="tooltip-text">
+                <p>Explore analogies between words (e.g., king:queen::man:woman).</p>
+              </span>
+            </div>
+          </button>
         </div>
         
         <div className="right-tools">
@@ -97,9 +123,23 @@ const Tools = ({
         </div>
       </div>
       
+      {/* Analogy Toolbar - Replace modal with toolbar */}
+      {showAnalogyTool && (
+        <AnalogyToolbar 
+          words={words}
+          serverUrl={serverUrl}
+          setMidpointClusters={setMidpointClusters}
+          setLoading={setLoading}
+          setError={setError}
+        />
+      )}
+      
       <style jsx>{`
         .tools-container {
+          display: flex;
+          flex-direction: column;
           width: 100%;
+          gap: 8px;
         }
         
         .tools-row {

@@ -3,20 +3,25 @@ import * as THREE from 'three';
 // Utility functions for vector visualizations
 
 // Get color for a point based on whether it's primary or not
-export const getPointColor = (word, words, isPrimary) => {
-  if (isPrimary) {
+export const getPointColor = (word, words, isPrimary, isContextSample, isAnalogy) => {
+  if (isAnalogy) {
+    // Use a distinct color for analogy results
+    return '#9C27B0'; // Purple for analogy results
+  } else if (isPrimary) {
     // Use a specific color for each primary word
     const colors = [
       '#4285F4', // Google blue
       '#EA4335', // Google red
       '#FBBC05', // Google yellow
       '#34A853', // Google green
-      '#9C27B0', // Purple
       '#FF9800', // Orange
       '#00BCD4'  // Cyan
     ];
     const wordIndex = words.indexOf(word);
     return colors[wordIndex % colors.length];
+  } else if (isContextSample) {
+    // Use a neutral color for context samples
+    return 'rgba(100, 100, 100, 0.5)';
   } else {
     // Use a neutral color for related words
     return 'rgba(150, 150, 150, 0.7)';

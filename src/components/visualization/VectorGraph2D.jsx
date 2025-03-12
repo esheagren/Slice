@@ -111,11 +111,14 @@ const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
       const y = scaleY(point.y);
       const isPrimary = words.includes(point.word);
       const isContextSample = point.isContextSample === true;
+      const isAnalogy = point.isAnalogy === true;
       
       // Determine radius based on point type
       let radius;
       if (isPrimary) {
         radius = 8; // Primary words (user input)
+      } else if (isAnalogy) {
+        radius = 7; // Analogy results (slightly larger than related)
       } else if (isContextSample) {
         radius = 3; // Context sample words (smaller)
       } else {
@@ -129,18 +132,19 @@ const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
         y,
         radius,
         isPrimary,
-        isContextSample
+        isContextSample,
+        isAnalogy
       });
       
       // Draw point
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fillStyle = getPointColor(point.word, words, isPrimary, isContextSample);
+      ctx.fillStyle = getPointColor(point.word, words, isPrimary, isContextSample, isAnalogy);
       ctx.fill();
       
-      // Draw label only for primary words and related words (not context samples)
-      if (!isContextSample || isPrimary) {
-        ctx.font = isPrimary ? 'bold 14px Arial' : '12px Arial';
+      // Draw label only for primary words, analogy results, and related words (not context samples)
+      if (!isContextSample || isPrimary || isAnalogy) {
+        ctx.font = isPrimary ? 'bold 14px Arial' : (isAnalogy ? 'bold 13px Arial' : '12px Arial');
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.fillText(point.word, x, y - radius - 5);
