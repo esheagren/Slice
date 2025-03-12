@@ -17,7 +17,37 @@ const HomePage = () => {
   const [viewMode, setViewMode] = useState('2D'); // Default to 2D view
 
   const handleWordSelect = (word) => {
-    // Implementation of handleWordSelect function
+    if (!words.includes(word)) {
+      const updatedWords = [...words, word];
+      setWords(updatedWords);
+      
+      // Trigger API call to check the word and update visualization
+      setLoading(true);
+      setError(null);
+      
+      axios.post(`${serverUrl}/api/checkWord`, { word })
+        .then(response => {
+          const wordResult = {
+            word: word,
+            exists: response.data.data.word.exists,
+            vector: response.data.data.word.vector
+          };
+          
+          setResponse(prev => ({
+            message: `Added word: ${word}`,
+            data: {
+              words: prev?.data?.words ? [...prev.data.words, wordResult] : [wordResult]
+            }
+          }));
+        })
+        .catch(error => {
+          console.error('Error checking word:', error);
+          setError(error.response?.data?.error || 'An error occurred while processing your request');
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
   };
 
   return (
