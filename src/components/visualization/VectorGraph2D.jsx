@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createTooltip, removeTooltip } from './VectorTooltip';
 import { getPointColor } from './VectorUtils';
+import LoadingAnimation from './LoadingAnimation';
 
 const VectorGraph2D = ({ coordinates, words, containerRef }) => {
   const canvasRef = useRef(null);
   const pointsRef = useRef([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
+    setIsLoading(coordinates.length === 0);
+    
     const resizeCanvas = () => {
       if (!containerRef.current || !canvasRef.current) {
         console.log('Missing refs:', { 
@@ -31,17 +35,16 @@ const VectorGraph2D = ({ coordinates, words, containerRef }) => {
       // Redraw visualization if we have coordinates
       if (coordinates.length > 0) {
         drawVisualization();
+        setIsLoading(false);
       } else {
         console.log('No coordinates to draw');
+        setIsLoading(true);
+        
         // Draw empty state with visible background
         const ctx = canvasRef.current.getContext('2d');
         if (ctx) {
           ctx.fillStyle = '#1a1a2e'; // Dark blue background
           ctx.fillRect(0, 0, width, height);
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-          ctx.font = '16px Arial';
-          ctx.textAlign = 'center';
-          ctx.fillText('Waiting for data...', width/2, height/2);
         }
       }
     };
@@ -91,50 +94,21 @@ const VectorGraph2D = ({ coordinates, words, containerRef }) => {
       maxY = Math.max(maxY, point.y);
     });
     
-    // Calculate the range of the data
-    const rangeX = maxX - minX;
-    const rangeY = maxY - minY;
-    
-    // Add padding as a percentage of the canvas size
-    const paddingPercentage = 0.15; // 15% padding on each side
-    const paddingX = canvas.width * paddingPercentage;
-    const paddingY = canvas.height * paddingPercentage;
-    
-    // Calculate available space for plotting
-    const plotWidth = canvas.width - (paddingX * 2);
-    const plotHeight = canvas.height - (paddingY * 2);
-    
-    // Determine the aspect ratio of the data and the canvas
-    const dataAspectRatio = rangeX / rangeY;
-    const canvasAspectRatio = plotWidth / plotHeight;
-    
-    // Adjust scaling to maintain aspect ratio and center the plot
-    let scaleX, scaleY, offsetX, offsetY;
-    
-    if (dataAspectRatio > canvasAspectRatio) {
-      // Data is wider than canvas, scale based on width
-      scaleX = plotWidth / rangeX;
-      scaleY = scaleX; // Keep aspect ratio
-      offsetX = paddingX;
-      offsetY = paddingY + (plotHeight - (rangeY * scaleY)) / 2; // Center vertically
-    } else {
-      // Data is taller than canvas, scale based on height
-      scaleY = plotHeight / rangeY;
-      scaleX = scaleY; // Keep aspect ratio
-      offsetY = paddingY;
-      offsetX = paddingX + (plotWidth - (rangeX * scaleX)) / 2; // Center horizontally
-    }
+    // Add padding
+    const padding = 50;
+    const plotWidth = canvas.width - (padding * 2);
+    const plotHeight = canvas.height - (padding * 2);
     
     // Scale function to map coordinates to canvas
-    const mapX = (x) => offsetX + (x - minX) * scaleX;
-    const mapY = (y) => offsetY + (y - minY) * scaleY;
+    const scaleX = (x) => padding + ((x - minX) / (maxX - minX)) * plotWidth;
+    const scaleY = (y) => padding + ((y - minY) / (maxY - minY)) * plotHeight;
     
     // Draw points
     pointsRef.current = [];
     
     coordinates.forEach(point => {
-      const x = mapX(point.x);
-      const y = mapY(point.y);
+      const x = scaleX(point.x);
+      const y = scaleY(point.y);
       const isPrimary = words.includes(point.word);
       const radius = isPrimary ? 8 : 5;
       
@@ -197,12 +171,21 @@ const VectorGraph2D = ({ coordinates, words, containerRef }) => {
   };
   
   return (
-    <canvas 
-      ref={canvasRef} 
-      className="vector-canvas"
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-    />
+    <>
+      {isLoading ? (
+        <LoadingAnimation 
+          width={containerRef.current?.clientWidth || 800} 
+          height={containerRef.current?.clientHeight || 600} 
+        />
+      ) : (
+        <canvas 
+          ref={canvasRef} 
+          className="vector-canvas"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        />
+      )}
+    </>
   );
 };
 
