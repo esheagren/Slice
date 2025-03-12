@@ -15,6 +15,7 @@ const HomePage = () => {
   const [serverUrl, setServerUrl] = useState('http://localhost:5001');
   const [numNeighbors, setNumNeighbors] = useState(5); // Default to 5 neighbors
   const [viewMode, setViewMode] = useState('2D'); // Default to 2D view
+  const [showSuggestions, setShowSuggestions] = useState(true); // Control visibility of suggestions
 
   const handleWordSelect = (word) => {
     if (!words.includes(word)) {
@@ -72,18 +73,41 @@ const HomePage = () => {
             </div>
           )}
           
-          {response && (
-            <div className="response-container">
-              <p className="response-message">{response.message}</p>
-            </div>
-          )}
+          <div className="words-container">
+            {words.length > 0 && (
+              <div className="selected-words">
+                {words.map((word, index) => (
+                  <div key={index} className="word-tag">
+                    {word}
+                    <button 
+                      className="remove-word" 
+                      onClick={() => setWords(words.filter((_, i) => i !== index))}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           
-          <SuggestedWords 
-            onWordSelect={handleWordSelect}
-            currentWords={words}
-            numSuggestions={8}
-            serverUrl={serverUrl}
-          />
+          <div className="suggestions-section">
+            <button 
+              className="suggestions-toggle" 
+              onClick={() => setShowSuggestions(!showSuggestions)}
+            >
+              {showSuggestions ? 'Hide Suggestions' : 'Show Suggestions'}
+            </button>
+            
+            {showSuggestions && (
+              <SuggestedWords 
+                onWordSelect={handleWordSelect}
+                currentWords={words}
+                numSuggestions={8}
+                serverUrl={serverUrl}
+              />
+            )}
+          </div>
         </div>
         
         <div className="content-area">
@@ -142,6 +166,61 @@ const HomePage = () => {
           gap: 1rem;
         }
         
+        .words-container {
+          max-height: 200px;
+          overflow-y: auto;
+          margin-bottom: 1rem;
+        }
+        
+        .selected-words {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+        
+        .word-tag {
+          display: inline-flex;
+          align-items: center;
+          background-color: #2a2a2c;
+          border-radius: 16px;
+          padding: 0.25rem 0.75rem;
+          font-size: 0.9rem;
+        }
+        
+        .remove-word {
+          background: none;
+          border: none;
+          color: #FF5757;
+          margin-left: 0.5rem;
+          cursor: pointer;
+          font-size: 1rem;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .suggestions-section {
+          margin-top: auto;
+          padding-top: 1rem;
+          border-top: 1px solid #2a2a2c;
+        }
+        
+        .suggestions-toggle {
+          width: 100%;
+          background-color: #2a2a2c;
+          color: #fff;
+          border: none;
+          border-radius: 4px;
+          padding: 0.5rem;
+          cursor: pointer;
+          margin-bottom: 1rem;
+        }
+        
+        .suggestions-toggle:hover {
+          background-color: #3a3a3c;
+        }
+        
         .content-area {
           flex: 1;
           display: flex;
@@ -177,15 +256,6 @@ const HomePage = () => {
           background-color: rgba(255, 87, 87, 0.1);
           border-radius: 4px;
           margin-top: 0.5rem;
-        }
-        
-        .response-container {
-          margin-top: 0.5rem;
-        }
-        
-        .response-message {
-          color: #FFC837;
-          font-size: 0.9rem;
         }
       `}</style>
     </div>
