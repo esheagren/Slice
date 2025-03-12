@@ -4,6 +4,7 @@ import VectorGraph from './VectorGraph';
 import WordInput from './WordInput';
 import Tools from './Tools';
 import ViewButton from './ViewButton';
+import SuggestedWords from './SuggestedWords';
 
 const HomePage = () => {
   const [words, setWords] = useState([]);
@@ -14,6 +15,10 @@ const HomePage = () => {
   const [serverUrl, setServerUrl] = useState('http://localhost:5001');
   const [numNeighbors, setNumNeighbors] = useState(5); // Default to 5 neighbors
   const [viewMode, setViewMode] = useState('2D'); // Default to 2D view
+
+  const handleWordSelect = (word) => {
+    // Implementation of handleWordSelect function
+  };
 
   return (
     <div className="app-container">
@@ -56,6 +61,13 @@ const HomePage = () => {
               <p className="response-message">{response.message}</p>
             </div>
           )}
+          
+          <SuggestedWords 
+            onWordSelect={handleWordSelect}
+            currentWords={words}
+            numSuggestions={8}
+            serverUrl={serverUrl}
+          />
         </div>
         
         <div className="content-area">

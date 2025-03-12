@@ -11,6 +11,7 @@
     "build-index": "node server/scripts/buildEmbeddingIndex.js"
   },
   "dependencies": {
+    "an-array-of-english-words": "^2.0.0",
     "axios": "^1.8.1",
     "cors": "^2.8.5",
     "express": "^4.21.2",
@@ -18,7 +19,8 @@
     "mathjs": "^14.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.3.0"
+    "react-router-dom": "^7.3.0",
+    "three": "^0.174.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
