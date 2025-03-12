@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createTooltip, removeTooltip } from './VectorTooltip';
 import { getPointColor } from './VectorUtils';
-import LoadingAnimation from './LoadingAnimation';
+import SimpleLoadingAnimation from './SimpleLoadingAnimation';
 
 const VectorGraph2D = ({ coordinates, words, containerRef }) => {
   const canvasRef = useRef(null);
@@ -173,7 +173,7 @@ const VectorGraph2D = ({ coordinates, words, containerRef }) => {
   return (
     <>
       {isLoading ? (
-        <LoadingAnimation 
+        <SimpleLoadingAnimation 
           width={containerRef.current?.clientWidth || 800} 
           height={containerRef.current?.clientHeight || 600} 
         />

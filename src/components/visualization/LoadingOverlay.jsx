@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import LoadingAnimation from './LoadingAnimation';
+import SimpleLoadingAnimation from './SimpleLoadingAnimation';
 
 const LoadingOverlay = () => {
   const overlayRef = useRef(null);
@@ -30,7 +30,7 @@ const LoadingOverlay = () => {
 
   return (
     <div className="loading-overlay" ref={overlayRef}>
-      <LoadingAnimation 
+      <SimpleLoadingAnimation 
         width={dimensions.width} 
         height={dimensions.height} 
       />
