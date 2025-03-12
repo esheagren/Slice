@@ -130,24 +130,6 @@ const VectorGraph2D = ({ coordinates, words, containerRef }) => {
       ctx.textAlign = 'center';
       ctx.fillText(point.word, x, y - radius - 5);
     });
-    
-    // Draw connections between primary words
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.lineWidth = 1;
-    
-    const primaryPoints = pointsRef.current.filter(p => p.isPrimary);
-    
-    for (let i = 0; i < primaryPoints.length; i++) {
-      for (let j = i + 1; j < primaryPoints.length; j++) {
-        const p1 = primaryPoints[i];
-        const p2 = primaryPoints[j];
-        
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-      }
-    }
   };
   
   // Handle mouse interactions
