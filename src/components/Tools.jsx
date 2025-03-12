@@ -40,30 +40,6 @@ const Tools = ({
     }
   };
 
-  // Add new function to handle the Add Context button click
-  const handleAddContext = async () => {
-    if (wordsValid && words.length > 0) {
-      setLoading(true);
-      
-      try {
-        // Import the addContext utility dynamically
-        const { addContext } = await import('../utils/addContext');
-        
-        // Call the utility function with the current words and settings
-        const contextClusters = await addContext(
-          words,
-          numMidpoints, // Use the current cluster size setting for consistency
-          serverUrl
-        );
-        
-        // Update the clusters with the context results
-        setMidpointClusters(contextClusters);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
   // Toggle view mode between 2D and 3D
   const toggleViewMode = () => {
     setViewMode(viewMode === '2D' ? '3D' : '2D');
@@ -79,13 +55,6 @@ const Tools = ({
             disabled={!wordsValid || loading}
           >
             Add Neighbors
-          </button>
-          <button 
-            className="tool-button" 
-            onClick={handleAddContext}
-            disabled={!wordsValid || loading}
-          >
-            Add Context
           </button>
         </div>
         
