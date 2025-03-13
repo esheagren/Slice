@@ -81,16 +81,24 @@ const VectorGraph = ({
         const coordinatesWithVectors = response.data.data.map(point => {
           // Check if this point is part of an analogy result
           const analogyCluster = midpointWords.find(cluster => 
-            cluster.isAnalogy && 
+            cluster.type === 'analogy' && 
             cluster.words.some(w => w.word === point.word)
           );
           
-          const isAnalogy = !!analogyCluster;
+          let isAnalogy = false;
+          let analogySource = null;
+          
+          if (analogyCluster) {
+            const analogyWord = analogyCluster.words.find(w => w.word === point.word);
+            isAnalogy = !!analogyWord?.isAnalogy;
+            analogySource = analogyWord?.analogySource || null;
+          }
           
           return {
             ...point,
             truncatedVector: vectorMap[point.word] || `Vector for ${point.word}`,
-            isAnalogy
+            isAnalogy,
+            analogySource
           };
         });
         

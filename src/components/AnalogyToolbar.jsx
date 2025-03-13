@@ -13,8 +13,6 @@ const AnalogyToolbar = ({
   const [word2, setWord2] = useState('');
   const [word3, setWord3] = useState('');
   const [isComputing, setIsComputing] = useState(false);
-  const [results, setResults] = useState([]);
-  const [selectedResult, setSelectedResult] = useState(null);
   
   // Set initial words if available
   useEffect(() => {
@@ -36,8 +34,6 @@ const AnalogyToolbar = ({
     
     setIsComputing(true);
     setLoading(true);
-    setResults([]);
-    setSelectedResult(null);
     
     try {
       console.log(`Computing analogy: ${word1} is to ${word2} as ${word3} is to ?`);
@@ -50,7 +46,8 @@ const AnalogyToolbar = ({
         distance: typeof r.distance === 'number' ? r.distance : 0
       }));
       
-      setResults(processedResults);
+      // Automatically add all results to visualization
+      addAnalogyToVisualization(processedResults);
     } catch (error) {
       console.error('Error computing analogy:', error);
       setError('Failed to compute analogy: ' + (error.response?.data?.error || error.message));
@@ -60,14 +57,10 @@ const AnalogyToolbar = ({
     }
   };
   
-  const handleSelectResult = (result) => {
-    setSelectedResult(result);
-  };
-  
-  const addToVisualization = () => {
-    if (!selectedResult) return;
+  const addAnalogyToVisualization = (results) => {
+    if (!results || results.length === 0) return;
     
-    console.log(`Adding analogy result to visualization: ${selectedResult.word}`);
+    console.log(`Adding ${results.length} analogy results to visualization`);
     
     const analogyCluster = {
       type: 'analogy',
@@ -76,19 +69,18 @@ const AnalogyToolbar = ({
         word2,
         word3
       },
-      words: [{
-        word: selectedResult.word,
-        distance: selectedResult.distance,
-        isAnalogy: true
-      }]
+      words: results.map(item => ({
+        word: item.word,
+        distance: item.distance,
+        isAnalogy: true,
+        analogySource: {  // Add source information for drawing connections
+          fromWords: [word1, word2, word3]
+        }
+      }))
     };
     
-    // Update the visualization with the new analogy result
+    // Update the visualization with the new analogy results
     setMidpointClusters(prevClusters => [analogyCluster, ...prevClusters]);
-    
-    // Clear the results to indicate completion
-    setResults([]);
-    setSelectedResult(null);
   };
   
   return (
@@ -144,30 +136,6 @@ const AnalogyToolbar = ({
           {isComputing ? 'Computing...' : 'Find'}
         </button>
       </div>
-      
-      {results.length > 0 && (
-        <div className="analogy-results-container">
-          <div className="analogy-results-header">Results:</div>
-          <div className="analogy-results-list">
-            {results.map((result, index) => (
-              <div 
-                key={index}
-                className={`analogy-result-item ${selectedResult?.word === result.word ? 'selected' : ''}`}
-                onClick={() => handleSelectResult(result)}
-              >
-                {result.word} ({(1 - result.distance).toFixed(2)})
-              </div>
-            ))}
-          </div>
-          <button 
-            className="analogy-add-button"
-            onClick={addToVisualization}
-            disabled={!selectedResult}
-          >
-            Add to Visualization
-          </button>
-        </div>
-      )}
     </div>
   );
 };

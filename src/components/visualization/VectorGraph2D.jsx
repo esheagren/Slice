@@ -112,6 +112,7 @@ const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
       const isPrimary = words.includes(point.word);
       const isContextSample = point.isContextSample === true;
       const isAnalogy = point.isAnalogy === true;
+      const analogySource = point.analogySource || null;
       
       // Determine radius based on point type
       let radius;
@@ -133,7 +134,8 @@ const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
         radius,
         isPrimary,
         isContextSample,
-        isAnalogy
+        isAnalogy,
+        analogySource
       });
       
       // Draw point
