@@ -115,23 +115,102 @@ class EmbeddingService {
     return vector1.map((val, i) => (val + vector2[i]) / 2);
   }
   
-  // Find nearest neighbors using the index
-  findNearestNeighbors(vector, k = 5) {
+  // Add this new method for analogy calculations
+  calculateAnalogy(vector1, vector2, vector3) {
+    if (!vector1 || !vector2 || !vector3 ||
+        vector1.length !== vector2.length || vector2.length !== vector3.length) {
+      console.error('Invalid vectors for analogy calculation');
+      return null;
+    }
+
+    // Calculate vector2 - vector1 + vector3
+    const analogyVector = new Array(vector1.length);
+    for (let i = 0; i < vector1.length; i++) {
+      analogyVector[i] = vector2[i] - vector1[i] + vector3[i];
+    }
+    
+    return analogyVector;
+  }
+  
+  // Enhanced findNearestNeighbors with better error handling and debugging
+  findNearestNeighbors(vector, numResults) {
     if (!this.index) {
       throw new Error('Index not loaded. Please call loadEmbeddings() first.');
     }
     
     try {
-      const result = this.index.searchKnn(vector, k);
+      // Log some debug info
+      console.log(`Searching for ${numResults} nearest neighbors`);
+      console.log(`idToWord array length: ${this.idToWord.length}`);
       
-      return result.neighbors.map((id, i) => ({
-        word: this.idToWord[id],
-        distance: result.distances[i]
-      }));
+      const result = this.index.searchKnn(vector, numResults);
+      console.log(`Search returned ${result.neighbors.length} neighbors`);
+      
+      // Validate result format
+      if (!result.neighbors || !result.distances) {
+        console.error('Invalid search result format:', result);
+        throw new Error('Invalid search result from HNSW');
+      }
+      
+      return result.neighbors.map((id, i) => {
+        // Extra validation of the ID
+        if (id >= this.idToWord.length || id < 0) {
+          console.error(`Invalid ID ${id} outside range of idToWord mapping (0-${this.idToWord.length-1})`);
+          return { word: `unknown_${id}`, distance: result.distances[i] };
+        }
+        
+        // Get the word, with fallback if undefined
+        const word = this.idToWord[id];
+        if (!word) {
+          console.error(`No word found for ID ${id}`);
+          return { word: `empty_${id}`, distance: result.distances[i] };
+        }
+        
+        return {
+          word: word,
+          distance: result.distances[i]
+        };
+      });
     } catch (error) {
       console.error('Error searching index:', error);
-      throw new Error('Failed to search for nearest neighbors');
+      throw new Error('Failed to search for nearest neighbors: ' + error.message);
     }
+  }
+  
+  // Add this method to find analogies with exact search instead of HNSW for better accuracy
+  findAnalogyExact(word1, word2, word3, numResults) {
+    // Get vectors
+    const vector1 = this.getWordVector(word1);
+    const vector2 = this.getWordVector(word2);
+    const vector3 = this.getWordVector(word3);
+    
+    if (!vector1 || !vector2 || !vector3) {
+      throw new Error('One or more word vectors not found');
+    }
+    
+    // Calculate analogy vector
+    const analogyVector = this.calculateAnalogy(vector1, vector2, vector3);
+    
+    // Perform exact similarity calculation for all words
+    const results = [];
+    
+    // Create a set of words to exclude from results
+    const excludeWords = new Set([word1, word2, word3]);
+    
+    // Calculate similarity with all words in vocabulary
+    for (const [word, id] of this.wordToId.entries()) {
+      // Skip input words
+      if (excludeWords.has(word)) continue;
+      
+      const wordVector = this.getWordVector(word);
+      if (!wordVector) continue;
+      
+      const distance = this.calculateEuclideanDistance(analogyVector, wordVector);
+      results.push({ word, distance });
+    }
+    
+    // Sort by distance (ascending) and return top results
+    return results.sort((a, b) => a.distance - b.distance).slice(0, numResults);
   }
   
   calculateEuclideanDistance(a, b) {
@@ -146,32 +225,6 @@ class EmbeddingService {
     }
     
     return Math.sqrt(sum);
-  }
-
-  calculateAnalogy(vector1, vector2, vector3) {
-    // Compute analogy vector: (word2 - word1) + word3
-    const analogyVector = new Array(this.dimensions);
-    
-    for (let i = 0; i < this.dimensions; i++) {
-      // Calculate the relationship vector (word2 - word1)
-      const relationshipComponent = vector2[i] - vector1[i];
-      
-      // Apply the relationship to word3
-      analogyVector[i] = vector3[i] + relationshipComponent;
-    }
-    
-    // Normalize the vector (optional but recommended)
-    const magnitude = Math.sqrt(
-      analogyVector.reduce((sum, val) => sum + val * val, 0)
-    );
-    
-    if (magnitude > 0) {
-      for (let i = 0; i < this.dimensions; i++) {
-        analogyVector[i] /= magnitude;
-      }
-    }
-    
-    return analogyVector;
   }
 }
 
