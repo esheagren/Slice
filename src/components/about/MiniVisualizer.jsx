@@ -45,8 +45,10 @@ const MiniVisualizer = () => {
   const containerRef = useRef(null);
   const [hoveredWord, setHoveredWord] = useState(null);
   const [selectedWord, setSelectedWord] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [canvasSize, setCanvasSize] = useState({ width: 500, height: 400 });
+  const [detailsPosition, setDetailsPosition] = useState({ x: 0, y: 0 });
+  const [activeTab, setActiveTab] = useState('2d');
   
   // Scale the coordinates to fit the canvas
   const scaleCoordinates = (coords) => {
@@ -147,10 +149,40 @@ const MiniVisualizer = () => {
   };
   
   // Handle canvas click
-  const handleClick = () => {
+  const handleClick = (e) => {
     if (hoveredWord) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const [wordX, wordY] = scaleCoordinates(sampleWordVectors[hoveredWord]);
+      
+      // Calculate position for the details panel
+      // Try to position it to the right of the word, but if there's not enough space,
+      // position it to the left
+      let detailsX = wordX + 20;
+      const detailsWidth = 300; // Approximate width of details panel
+      
+      if (detailsX + detailsWidth > canvasSize.width) {
+        detailsX = wordX - detailsWidth - 20;
+      }
+      
+      // Try to center vertically
+      let detailsY = wordY - 100;
+      if (detailsY < 0) {
+        detailsY = 10;
+      } else if (detailsY + 200 > canvasSize.height) {
+        detailsY = canvasSize.height - 210;
+      }
+      
+      setDetailsPosition({ x: detailsX, y: detailsY });
       setSelectedWord(hoveredWord);
-      setShowModal(true);
+      setShowDetails(true);
+      setActiveTab('2d');
+    } else {
+      // If clicking outside a word, hide the details
+      setShowDetails(false);
+      setSelectedWord(null);
     }
   };
   
@@ -176,22 +208,41 @@ const MiniVisualizer = () => {
     return () => window.removeEventListener('resize', updateSize);
   }, []);
   
-  // Generate a random full embedding (for demonstration purposes)
-  const generateFullEmbedding = (word) => {
-    if (sampleFullEmbeddings[word]) {
-      return sampleFullEmbeddings[word];
-    }
+  // Handle document click to close details panel when clicking outside
+  useEffect(() => {
+    const handleDocumentClick = (e) => {
+      if (showDetails && canvasRef.current) {
+        const canvas = canvasRef.current;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // Check if click is inside the canvas but outside any word
+        if (x >= 0 && x <= canvasSize.width && y >= 0 && y <= canvasSize.height) {
+          let clickedOnWord = false;
+          Object.entries(sampleWordVectors).forEach(([word, vector]) => {
+            const [wordX, wordY] = scaleCoordinates(vector);
+            const distance = Math.sqrt(Math.pow(x - wordX, 2) + Math.pow(y - wordY, 2));
+            
+            if (distance < 15) {
+              clickedOnWord = true;
+            }
+          });
+          
+          if (!clickedOnWord && !e.target.closest('.vector-details')) {
+            setShowDetails(false);
+            setSelectedWord(null);
+          }
+        }
+      }
+    };
     
-    // Fallback to generate random values
-    return Array(300).fill(0).map(() => (Math.random() * 2 - 1).toFixed(3));
-  };
-  
-  // Close the modal when clicking outside
-  const handleModalClose = (e) => {
-    if (e.target.classList.contains('modal-overlay')) {
-      setShowModal(false);
-    }
-  };
+    document.addEventListener('click', handleDocumentClick);
+    
+    return () => {
+      document.removeEventListener('click', handleDocumentClick);
+    };
+  }, [showDetails, canvasSize]);
   
   return (
     <div className="mini-visualizer">
@@ -215,18 +266,96 @@ const MiniVisualizer = () => {
             height: `${canvasSize.height}px`
           }}
         />
-      </div>
-      
-      <div className="controls">
-        <button 
-          className="reset-button"
-          onClick={() => {
-            setSelectedWord(null);
-            setShowModal(false);
-          }}
-        >
-          Reset Selection
-        </button>
+        
+        {showDetails && selectedWord && (
+          <div 
+            className="vector-details"
+            style={{
+              left: `${detailsPosition.x}px`,
+              top: `${detailsPosition.y}px`
+            }}
+          >
+            <div className="details-header">
+              <h4>"{selectedWord}"</h4>
+              <button className="close-button" onClick={() => {
+                setShowDetails(false);
+                setSelectedWord(null);
+              }}>×</button>
+            </div>
+            
+            <div className="details-tabs">
+              <button 
+                className={`tab-button ${activeTab === '2d' ? 'active' : ''}`}
+                onClick={() => setActiveTab('2d')}
+              >
+                2D Vector
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'full' ? 'active' : ''}`}
+                onClick={() => setActiveTab('full')}
+              >
+                Full Vector
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'info' ? 'active' : ''}`}
+                onClick={() => setActiveTab('info')}
+              >
+                Info
+              </button>
+            </div>
+            
+            <div className="details-content">
+              {activeTab === '2d' && (
+                <div className="vector-display">
+                  <div className="vector-label">2D Projection:</div>
+                  <div className="vector-value">
+                    <span className="vector-bracket">[</span>
+                    {sampleWordVectors[selectedWord].map((value, index) => (
+                      <span key={index}>
+                        {value.toFixed(2)}
+                        {index < sampleWordVectors[selectedWord].length - 1 && <span className="vector-comma">,</span>}
+                      </span>
+                    ))}
+                    <span className="vector-bracket">]</span>
+                  </div>
+                  <div className="vector-explanation">
+                    These are the coordinates used to position the word in this 2D visualization.
+                  </div>
+                </div>
+              )}
+              
+              {activeTab === 'full' && (
+                <div className="vector-display">
+                  <div className="vector-label">Full Embedding (first 10 dimensions):</div>
+                  <div className="vector-value">
+                    <span className="vector-bracket">[</span>
+                    {sampleFullEmbeddings[selectedWord].map((value, index) => (
+                      <span key={index}>
+                        {value.toFixed(2)}
+                        {index < sampleFullEmbeddings[selectedWord].length - 1 && <span className="vector-comma">,</span>}
+                      </span>
+                    ))}
+                    <span className="vector-bracket">]</span>
+                  </div>
+                  <div className="vector-explanation">
+                    In real models, embeddings typically have ~300 dimensions.
+                  </div>
+                </div>
+              )}
+              
+              {activeTab === 'info' && (
+                <div className="info-content">
+                  <p>Word embeddings represent words as vectors in a high-dimensional space where:</p>
+                  <ul>
+                    <li>Similar words are positioned close together</li>
+                    <li>Relationships between words are preserved geometrically</li>
+                    <li>Each dimension may capture some semantic aspect</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       
       <div className="explanation">
@@ -235,70 +364,6 @@ const MiniVisualizer = () => {
           typically have hundreds of dimensions (e.g., 300) that capture different aspects of meaning.
         </p>
       </div>
-      
-      {showModal && selectedWord && (
-        <div className="modal-overlay" onClick={handleModalClose}>
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>Vector Representation: "{selectedWord}"</h3>
-              <button className="close-button" onClick={() => setShowModal(false)}>×</button>
-            </div>
-            
-            <div className="modal-body">
-              <div className="vector-section">
-                <h4>2D Projection (Visualization Coordinates)</h4>
-                <div className="vector-display">
-                  <span className="vector-bracket">[</span>
-                  {sampleWordVectors[selectedWord].map((value, index) => (
-                    <span key={index} className="vector-value">
-                      {value.toFixed(2)}
-                      {index < sampleWordVectors[selectedWord].length - 1 && <span className="vector-comma">,</span>}
-                    </span>
-                  ))}
-                  <span className="vector-bracket">]</span>
-                </div>
-                <p className="vector-explanation">
-                  These are the 2D coordinates used to position the word in the visualization above.
-                </p>
-              </div>
-              
-              <div className="vector-section">
-                <h4>Sample Full Embedding (First 10 dimensions)</h4>
-                <div className="vector-display">
-                  <span className="vector-bracket">[</span>
-                  {sampleFullEmbeddings[selectedWord].map((value, index) => (
-                    <span key={index} className="vector-value">
-                      {value.toFixed(2)}
-                      {index < sampleFullEmbeddings[selectedWord].length - 1 && <span className="vector-comma">,</span>}
-                    </span>
-                  ))}
-                  <span className="vector-bracket">]</span>
-                </div>
-                <p className="vector-explanation">
-                  In a real word embedding model, each word is represented by a vector with ~300 dimensions.
-                  Each dimension captures some aspect of the word's meaning.
-                </p>
-              </div>
-              
-              <div className="vector-section">
-                <h4>How Word Embeddings Work</h4>
-                <p>
-                  Word embeddings represent words as points in a high-dimensional space where:
-                </p>
-                <ul>
-                  <li>Similar words are positioned close together</li>
-                  <li>Relationships between words are preserved as geometric relationships</li>
-                  <li>Each dimension may capture some semantic aspect of the word</li>
-                </ul>
-                <p>
-                  These vector representations allow AI models to understand and manipulate word meanings
-                  mathematically, enabling tasks like finding similar words, completing analogies, and more.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       
       <style jsx>{`
         .mini-visualizer {
@@ -317,8 +382,7 @@ const MiniVisualizer = () => {
         
         h4 {
           color: #FFA500;
-          margin-top: 1rem;
-          margin-bottom: 0.5rem;
+          margin: 0;
           font-size: 1.1rem;
         }
         
@@ -341,38 +405,13 @@ const MiniVisualizer = () => {
           border-radius: 8px;
           padding: 1rem;
           width: 100%;
+          position: relative;
         }
         
         canvas {
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 4px;
           display: block;
-        }
-        
-        .controls {
-          display: flex;
-          justify-content: center;
-          gap: 1rem;
-          margin-bottom: 1.5rem;
-        }
-        
-        button {
-          background-color: rgba(26, 26, 46, 0.8);
-          color: white;
-          border: 1px solid rgba(255, 165, 0, 0.5);
-          border-radius: 4px;
-          padding: 0.5rem 1rem;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-        
-        button:hover:not(:disabled) {
-          background-color: rgba(255, 165, 0, 0.2);
-        }
-        
-        button:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
         }
         
         .explanation {
@@ -386,79 +425,92 @@ const MiniVisualizer = () => {
           color: #FFA500;
         }
         
-        /* Modal styles */
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-color: rgba(0, 0, 0, 0.7);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          z-index: 1000;
-          padding: 20px;
-        }
-        
-        .modal-content {
+        /* Vector details panel */
+        .vector-details {
+          position: absolute;
+          width: 300px;
           background-color: rgba(26, 26, 46, 0.95);
           border-radius: 8px;
-          width: 100%;
-          max-width: 700px;
-          max-height: 90vh;
-          overflow-y: auto;
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
           border: 1px solid rgba(255, 165, 0, 0.3);
+          z-index: 10;
+          overflow: hidden;
         }
         
-        .modal-header {
+        .details-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 1rem 1.5rem;
+          padding: 0.5rem 0.75rem;
+          background-color: rgba(255, 165, 0, 0.1);
           border-bottom: 1px solid rgba(255, 165, 0, 0.2);
-        }
-        
-        .modal-header h3 {
-          margin: 0;
         }
         
         .close-button {
           background: transparent;
           border: none;
           color: white;
-          font-size: 1.5rem;
+          font-size: 1.2rem;
           cursor: pointer;
           padding: 0;
           line-height: 1;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         
-        .modal-body {
-          padding: 1.5rem;
-        }
-        
-        .vector-section {
-          margin-bottom: 1.5rem;
-          padding-bottom: 1.5rem;
+        .details-tabs {
+          display: flex;
           border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        .vector-section:last-child {
-          border-bottom: none;
-          margin-bottom: 0;
-          padding-bottom: 0;
+        .tab-button {
+          flex: 1;
+          background: transparent;
+          border: none;
+          color: white;
+          padding: 0.5rem;
+          font-size: 0.8rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        
+        .tab-button:hover {
+          background-color: rgba(255, 165, 0, 0.1);
+        }
+        
+        .tab-button.active {
+          background-color: rgba(255, 165, 0, 0.2);
+          color: #FFA500;
+          font-weight: bold;
+        }
+        
+        .details-content {
+          padding: 0.75rem;
+          max-height: 200px;
+          overflow-y: auto;
         }
         
         .vector-display {
+          margin-bottom: 0.5rem;
+        }
+        
+        .vector-label {
+          font-size: 0.8rem;
+          color: rgba(255, 255, 255, 0.8);
+          margin-bottom: 0.25rem;
+        }
+        
+        .vector-value {
           font-family: monospace;
           background-color: rgba(0, 0, 0, 0.3);
-          padding: 1rem;
+          padding: 0.5rem;
           border-radius: 4px;
+          font-size: 0.9rem;
           overflow-x: auto;
           white-space: nowrap;
-          margin: 0.5rem 0;
-          font-size: 1.1rem;
         }
         
         .vector-bracket {
@@ -466,38 +518,45 @@ const MiniVisualizer = () => {
           font-weight: bold;
         }
         
-        .vector-value {
-          color: white;
-          padding: 0 2px;
-        }
-        
         .vector-comma {
           color: rgba(255, 255, 255, 0.7);
-          margin-right: 4px;
+          margin-right: 2px;
         }
         
         .vector-explanation {
-          font-size: 0.9rem;
-          color: rgba(255, 255, 255, 0.7);
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.6);
           font-style: italic;
+          margin-top: 0.25rem;
         }
         
-        ul {
-          margin-left: 1.5rem;
-          line-height: 1.6;
+        .info-content {
+          font-size: 0.85rem;
         }
         
-        li {
+        .info-content p {
+          margin-top: 0;
           margin-bottom: 0.5rem;
+          font-size: 0.85rem;
+        }
+        
+        .info-content ul {
+          margin: 0;
+          padding-left: 1.2rem;
+        }
+        
+        .info-content li {
+          margin-bottom: 0.25rem;
+          font-size: 0.8rem;
         }
         
         @media (max-width: 768px) {
-          .modal-content {
-            width: 95%;
+          .vector-details {
+            width: 250px;
           }
           
-          .vector-display {
-            font-size: 0.9rem;
+          .vector-value {
+            font-size: 0.8rem;
           }
         }
       `}</style>
