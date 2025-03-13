@@ -115,69 +115,70 @@ const MidpointToolbar = ({
           value={word1}
           onChange={(e) => setWord1(e.target.value)}
         >
-          <option value="">Select first word</option>
+          <option value="">First word</option>
           {words.map(word => (
             <option key={`w1-${word}`} value={word}>{word}</option>
           ))}
         </select>
         
-        <span className="midpoint-connector">and</span>
+        <span className="midpoint-connector">→</span>
         
         <select 
           className="midpoint-select"
           value={word2}
           onChange={(e) => setWord2(e.target.value)}
         >
-          <option value="">Select second word</option>
+          <option value="">Second word</option>
           {words.map(word => (
             <option key={`w2-${word}`} value={word}>{word}</option>
           ))}
         </select>
-      </div>
-      
-      <div className="midpoint-options">
-        <div className="recursion-label">
-          <span>Recursion depth:</span>
-          <select 
-            className="recursion-select"
-            value={recursionDepth}
-            onChange={(e) => setRecursionDepth(parseInt(e.target.value))}
-          >
-            <option value="0">None (direct midpoint only)</option>
-            <option value="1">One level (secondary midpoints)</option>
-            <option value="2">Two levels (tertiary midpoints)</option>
-          </select>
-        </div>
-        
-        <div className="search-mode">
-          <label className="toggle-label">
-            <input
-              type="checkbox"
-              checked={useExactSearch}
-              onChange={(e) => setUseExactSearch(e.target.checked)}
-            />
-            <span className="toggle-text">Exact search</span>
-          </label>
-        </div>
         
         <button 
           className="midpoint-search-btn"
           onClick={handleSearch}
           disabled={!word1 || !word2 || isComputing}
         >
-          Find Midpoints
+          Find
         </button>
+      </div>
+      
+      <div className="midpoint-options">
+        <div className="option-group">
+          <label className="option-label">Depth:</label>
+          <select 
+            className="option-select"
+            value={recursionDepth}
+            onChange={(e) => setRecursionDepth(parseInt(e.target.value))}
+          >
+            <option value="0">Direct only</option>
+            <option value="1">One level</option>
+            <option value="2">Two levels</option>
+          </select>
+        </div>
+        
+        <div className="option-group">
+          <label className="toggle-label">
+            <input
+              type="checkbox"
+              checked={useExactSearch}
+              onChange={(e) => setUseExactSearch(e.target.checked)}
+            />
+            <span className="toggle-text">Exact</span>
+          </label>
+        </div>
       </div>
       
       <style jsx>{`
         .midpoint-toolbar {
-          background: #1a1a1c;
-          border-radius: 8px;
-          padding: 12px;
+          background: rgba(26, 26, 30, 0.8);
+          border-radius: 3px;
+          padding: 10px;
           margin-top: 8px;
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 8px;
+          border: 1px solid rgba(60, 60, 70, 0.5);
         }
         
         .midpoint-setup {
@@ -188,59 +189,83 @@ const MidpointToolbar = ({
         
         .midpoint-select {
           flex: 1;
-          padding: 6px 10px;
-          border-radius: 4px;
-          background: #2a2a2c;
-          color: white;
-          border: 1px solid #3a3a3c;
+          padding: 6px 8px;
+          border-radius: 3px;
+          background: rgba(30, 30, 34, 0.8);
+          color: rgba(240, 240, 245, 0.9);
+          border: 1px solid rgba(60, 60, 70, 0.5);
+          font-family: sans-serif;
+          font-size: 13px;
+          transition: all 0.15s ease;
+        }
+        
+        .midpoint-select:hover, .midpoint-select:focus {
+          border-color: rgba(80, 80, 90, 0.7);
+          outline: none;
         }
         
         .midpoint-connector {
-          color: #aaa;
+          color: rgba(200, 200, 210, 0.8);
           font-size: 14px;
+          font-family: sans-serif;
         }
         
         .midpoint-options {
           display: flex;
-          justify-content: space-between;
+          gap: 12px;
           align-items: center;
         }
         
-        .recursion-label {
+        .option-group {
           display: flex;
           align-items: center;
-          gap: 8px;
-          color: #aaa;
-          font-size: 14px;
+          gap: 6px;
         }
         
-        .recursion-select {
-          padding: 6px 10px;
-          border-radius: 4px;
-          background: #2a2a2c;
-          color: white;
-          border: 1px solid #3a3a3c;
+        .option-label {
+          color: rgba(200, 200, 210, 0.8);
+          font-size: 13px;
+          font-family: sans-serif;
+        }
+        
+        .option-select {
+          padding: 4px 6px;
+          border-radius: 3px;
+          background: rgba(30, 30, 34, 0.8);
+          color: rgba(240, 240, 245, 0.9);
+          border: 1px solid rgba(60, 60, 70, 0.5);
+          font-family: sans-serif;
+          font-size: 13px;
+          transition: all 0.15s ease;
+        }
+        
+        .option-select:hover, .option-select:focus {
+          border-color: rgba(80, 80, 90, 0.7);
+          outline: none;
         }
         
         .midpoint-search-btn {
-          padding: 8px 16px;
-          border-radius: 4px;
-          background: linear-gradient(135deg, #4285F4 0%, #34A853 100%);
-          color: white;
-          border: none;
-          font-weight: 500;
+          padding: 6px 12px;
+          border-radius: 3px;
+          background: rgba(30, 30, 34, 0.9);
+          color: rgba(240, 240, 245, 0.9);
+          border: 1px solid rgba(60, 60, 70, 0.5);
+          font-weight: 400;
           cursor: pointer;
+          transition: all 0.15s ease;
+          font-family: sans-serif;
+          font-size: 13px;
+        }
+        
+        .midpoint-search-btn:hover {
+          background: rgba(40, 40, 45, 0.9);
+          border-color: rgba(80, 80, 90, 0.7);
+          color: rgba(255, 255, 255, 1);
         }
         
         .midpoint-search-btn:disabled {
-          opacity: 0.6;
+          opacity: 0.4;
           cursor: not-allowed;
-        }
-        
-        .search-mode {
-          display: flex;
-          align-items: center;
-          margin-right: 12px;
         }
         
         .toggle-label {
@@ -253,7 +278,40 @@ const MidpointToolbar = ({
         .toggle-text {
           margin-left: 6px;
           font-size: 13px;
-          color: #e0e0e0;
+          color: rgba(200, 200, 210, 0.8);
+          font-family: sans-serif;
+        }
+        
+        input[type="checkbox"] {
+          appearance: none;
+          -webkit-appearance: none;
+          width: 14px;
+          height: 14px;
+          border-radius: 3px;
+          border: 1px solid rgba(60, 60, 70, 0.5);
+          background: rgba(30, 30, 34, 0.8);
+          position: relative;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+        
+        input[type="checkbox"]:checked {
+          background: rgba(30, 30, 40, 0.95);
+          border-color: rgba(80, 80, 90, 0.7);
+        }
+        
+        input[type="checkbox"]:checked::after {
+          content: "✓";
+          position: absolute;
+          color: rgba(240, 240, 245, 0.9);
+          font-size: 10px;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+        
+        input[type="checkbox"]:hover {
+          border-color: rgba(80, 80, 90, 0.7);
         }
       `}</style>
     </div>

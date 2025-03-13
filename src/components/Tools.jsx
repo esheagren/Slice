@@ -76,14 +76,14 @@ const Tools = ({
             aria-label="Add Neighbors"
           >
             <div className="tooltip">
-              <span className="icon">⊕</span>
+              <span className="icon">+</span>
               <span className="tooltip-text">
-                <p>Finds semantically similar words to your current selection and adds them to your visualization.</p>
+                <p>Finds semantically similar words to your current selection</p>
               </span>
             </div>
           </button>
           
-          {/* Add Ruler Button */}
+          {/* Measure Distance Button */}
           <button 
             className={`tool-button ${rulerActive ? 'active' : ''}`} 
             onClick={toggleRuler}
@@ -91,14 +91,14 @@ const Tools = ({
             aria-label="Measure Distance"
           >
             <div className="tooltip">
-              <span className="icon">📏</span>
+              <span className="icon">↔</span>
               <span className="tooltip-text">
-                <p>Measures semantic distance between words using cosine similarity.</p>
+                <p>Measures semantic distance between words</p>
               </span>
             </div>
           </button>
           
-          {/* Add Analogy Button */}
+          {/* Analogy Button */}
           <button 
             className={`tool-button ${showAnalogyTool ? 'active' : ''}`}
             onClick={toggleAnalogyTool}
@@ -107,14 +107,14 @@ const Tools = ({
             title={words.length < 3 ? "Need at least 3 words for analogies" : "Explore word analogies"}
           >
             <div className="tooltip">
-              <span className="icon">🔄</span>
+              <span className="icon">≈</span>
               <span className="tooltip-text">
-                <p>Explore analogies between words (e.g., king:queen::man:woman).</p>
+                <p>Explore analogies between words</p>
               </span>
             </div>
           </button>
           
-          {/* Add Midpoint Button */}
+          {/* Midpoint Button */}
           <button 
             className={`tool-button ${showMidpointTool ? 'active' : ''}`}
             onClick={toggleMidpointTool}
@@ -123,9 +123,9 @@ const Tools = ({
             title={words.length < 2 ? "Need at least 2 words for midpoints" : "Find midpoints between words"}
           >
             <div className="tooltip">
-              <span className="icon">⚬</span>
+              <span className="icon">•</span>
               <span className="tooltip-text">
-                <p>Find words at the midpoint between two selected words.</p>
+                <p>Find words at the midpoint between two selected words</p>
               </span>
             </div>
           </button>
@@ -137,7 +137,7 @@ const Tools = ({
             onClick={toggleViewMode}
             disabled={loading || !wordsValid || words.length === 0}
           >
-            {viewMode === '2D' ? '3D View' : '2D View'}
+            {viewMode === '2D' ? '2D' : '3D'}
           </button>
         </div>
       </div>
@@ -169,6 +169,7 @@ const Tools = ({
           display: flex;
           flex-direction: column;
           width: 100%;
+          margin-bottom: 0.75rem;
         }
         
         .tools-row {
@@ -189,61 +190,77 @@ const Tools = ({
         }
         
         .tool-button {
-          width: 40px;
-          height: 40px;
-          border-radius: 8px;
-          background: #2a2a2c;
-          color: white;
-          border: none;
+          width: 32px;
+          height: 32px;
+          border-radius: 3px;
+          background: rgba(30, 30, 34, 0.8);
+          color: rgba(240, 240, 245, 0.9);
+          border: 1px solid rgba(60, 60, 70, 0.5);
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.15s ease;
           position: relative;
           font-size: 18px;
+          font-family: sans-serif;
         }
         
         .tool-button:hover {
-          background: #3a3a3c;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+          background: rgba(40, 40, 45, 0.9);
+          border-color: rgba(80, 80, 90, 0.7);
+          color: rgba(255, 255, 255, 1);
         }
         
         .tool-button:disabled {
-          opacity: 0.5;
+          opacity: 0.4;
           cursor: not-allowed;
-          transform: none;
-          box-shadow: none;
         }
         
         .tooltip {
           position: relative;
           display: inline-block;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         
         .tooltip-text {
           visibility: hidden;
-          width: 200px;
-          background-color: #333;
-          color: #fff;
-          text-align: center;
-          border-radius: 6px;
-          padding: 8px;
+          width: 160px;
+          background-color: rgba(20, 20, 24, 0.95);
+          color: #f0f0f5;
+          text-align: left;
+          border-radius: 3px;
+          padding: 6px 8px;
           position: absolute;
           z-index: 1;
-          bottom: 125%;
-          left: 50%;
-          transform: translateX(-50%);
+          left: 120%;
+          top: 50%;
+          transform: translateY(-50%);
           opacity: 0;
-          transition: opacity 0.3s;
+          transition: opacity 0.2s;
           font-size: 12px;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+          font-family: sans-serif;
+          border: 1px solid rgba(80, 80, 90, 0.3);
+        }
+        
+        .tooltip-text::after {
+          content: "";
+          position: absolute;
+          top: 50%;
+          right: 100%;
+          margin-top: -5px;
+          border-width: 5px;
+          border-style: solid;
+          border-color: transparent rgba(20, 20, 24, 0.95) transparent transparent;
         }
         
         .tooltip-text p {
           margin: 0;
-          line-height: 1.4;
+          line-height: 1.3;
         }
         
         .tooltip:hover .tooltip-text {
@@ -252,33 +269,34 @@ const Tools = ({
         }
         
         .view-button {
-          padding: 0.75rem 1rem;
-          border-radius: 6px;
-          background: #2a2a2c;
-          color: white;
-          border: none;
-          font-weight: 500;
+          padding: 0.4rem 0.6rem;
+          border-radius: 3px;
+          background: rgba(30, 30, 34, 0.8);
+          color: rgba(240, 240, 245, 0.9);
+          border: 1px solid rgba(60, 60, 70, 0.5);
+          font-weight: 400;
           cursor: pointer;
-          transition: all 0.2s ease;
-          font-size: 0.95rem;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          transition: all 0.15s ease;
+          font-size: 0.9rem;
+          font-family: sans-serif;
         }
         
         .view-button:hover {
-          background: #3a3a3c;
-          transform: translateY(-1px);
-          box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+          background: rgba(40, 40, 45, 0.9);
+          border-color: rgba(80, 80, 90, 0.7);
+          color: rgba(255, 255, 255, 1);
         }
         
-        .view-button:active {
-          transform: translateY(0);
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        .view-button:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
         }
         
         .tool-button.active {
-          background: linear-gradient(135deg, rgba(66, 133, 244, 0.8) 0%, rgba(52, 168, 83, 0.8) 100%);
-          transform: translateY(1px);
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+          background: rgba(30, 30, 40, 0.95);
+          border-color: rgba(100, 100, 120, 0.8);
+          color: rgba(255, 255, 255, 1);
+          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
         }
       `}</style>
     </div>
