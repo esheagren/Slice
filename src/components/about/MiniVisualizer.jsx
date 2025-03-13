@@ -20,12 +20,32 @@ const sampleWordVectors = {
   "vegetable": [-0.6, -0.4]
 };
 
+// Sample full embeddings (simulated 10-dimensional vectors for demonstration)
+const sampleFullEmbeddings = {
+  "king": [0.2, 0.8, 0.42, -0.15, 0.33, 0.67, -0.28, 0.12, 0.55, -0.41],
+  "queen": [0.3, 0.9, 0.38, -0.12, 0.29, 0.71, -0.31, 0.09, 0.61, -0.37],
+  "man": [-0.1, 0.7, 0.25, -0.33, 0.41, 0.52, -0.19, 0.27, 0.48, -0.52],
+  "woman": [0.0, 0.8, 0.22, -0.29, 0.38, 0.57, -0.22, 0.24, 0.53, -0.48],
+  "computer": [0.8, -0.3, 0.61, 0.45, -0.22, -0.18, 0.73, 0.51, -0.09, 0.33],
+  "technology": [0.7, -0.2, 0.58, 0.41, -0.19, -0.15, 0.69, 0.48, -0.05, 0.29],
+  "science": [0.6, -0.1, 0.52, 0.38, -0.15, -0.09, 0.63, 0.44, -0.02, 0.25],
+  "art": [-0.7, -0.5, -0.45, -0.33, -0.61, 0.22, -0.18, -0.39, 0.15, -0.27],
+  "music": [-0.8, -0.4, -0.51, -0.37, -0.58, 0.19, -0.22, -0.43, 0.11, -0.31],
+  "painting": [-0.9, -0.6, -0.57, -0.42, -0.65, 0.25, -0.15, -0.47, 0.18, -0.35],
+  "dog": [0.4, -0.8, 0.22, 0.61, -0.45, -0.33, 0.18, 0.29, -0.51, 0.37],
+  "cat": [0.3, -0.9, 0.19, 0.58, -0.42, -0.37, 0.15, 0.25, -0.48, 0.33],
+  "animal": [0.5, -0.7, 0.27, 0.55, -0.39, -0.29, 0.22, 0.33, -0.45, 0.41],
+  "food": [-0.4, -0.2, -0.25, 0.18, -0.33, 0.41, -0.52, 0.27, 0.19, -0.48],
+  "fruit": [-0.5, -0.3, -0.29, 0.15, -0.37, 0.38, -0.48, 0.24, 0.22, -0.53],
+  "vegetable": [-0.6, -0.4, -0.33, 0.12, -0.41, 0.35, -0.55, 0.21, 0.25, -0.57]
+};
+
 const MiniVisualizer = () => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const [hoveredWord, setHoveredWord] = useState(null);
-  const [selectedWords, setSelectedWords] = useState([]);
-  const [showRelationship, setShowRelationship] = useState(false);
+  const [selectedWord, setSelectedWord] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   const [canvasSize, setCanvasSize] = useState({ width: 500, height: 400 });
   
   // Scale the coordinates to fit the canvas
@@ -77,7 +97,7 @@ const MiniVisualizer = () => {
       // Draw dot
       ctx.beginPath();
       
-      if (selectedWords.includes(word)) {
+      if (selectedWord === word) {
         ctx.fillStyle = '#FFA500';
         ctx.arc(x, y, 6, 0, Math.PI * 2);
       } else if (word === hoveredWord) {
@@ -91,50 +111,17 @@ const MiniVisualizer = () => {
       ctx.fill();
       
       // Draw label
-      ctx.font = word === hoveredWord || selectedWords.includes(word) 
+      ctx.font = word === hoveredWord || selectedWord === word 
         ? 'bold 14px Arial' 
         : '12px Arial';
-      ctx.fillStyle = word === hoveredWord || selectedWords.includes(word)
+      ctx.fillStyle = word === hoveredWord || selectedWord === word
         ? '#FFA500'
         : 'rgba(255, 255, 255, 0.8)';
       ctx.textAlign = 'center';
       ctx.fillText(word, x, y - 10);
     });
     
-    // Draw relationship line if two words are selected
-    if (showRelationship && selectedWords.length === 2) {
-      const [word1, word2] = selectedWords;
-      const [x1, y1] = scaleCoordinates(sampleWordVectors[word1]);
-      const [x2, y2] = scaleCoordinates(sampleWordVectors[word2]);
-      
-      // Draw line between words
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255, 165, 0, 0.6)';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 3]);
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      
-      // Calculate midpoint
-      const midX = (x1 + x2) / 2;
-      const midY = (y1 + y2) / 2;
-      
-      // Draw midpoint
-      ctx.beginPath();
-      ctx.fillStyle = 'rgba(255, 165, 0, 0.8)';
-      ctx.arc(midX, midY, 4, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Draw midpoint label
-      ctx.font = 'italic 12px Arial';
-      ctx.fillStyle = '#FFA500';
-      ctx.textAlign = 'center';
-      ctx.fillText('midpoint', midX, midY - 10);
-    }
-    
-  }, [hoveredWord, selectedWords, showRelationship, canvasSize]);
+  }, [hoveredWord, selectedWord, canvasSize]);
   
   // Handle canvas mouse movement
   const handleMouseMove = (e) => {
@@ -162,16 +149,8 @@ const MiniVisualizer = () => {
   // Handle canvas click
   const handleClick = () => {
     if (hoveredWord) {
-      if (selectedWords.includes(hoveredWord)) {
-        // Deselect word
-        setSelectedWords(selectedWords.filter(word => word !== hoveredWord));
-      } else if (selectedWords.length < 2) {
-        // Select word (max 2)
-        setSelectedWords([...selectedWords, hoveredWord]);
-      } else {
-        // Replace the first word
-        setSelectedWords([hoveredWord, selectedWords[1]]);
-      }
+      setSelectedWord(hoveredWord);
+      setShowModal(true);
     }
   };
   
@@ -197,6 +176,23 @@ const MiniVisualizer = () => {
     return () => window.removeEventListener('resize', updateSize);
   }, []);
   
+  // Generate a random full embedding (for demonstration purposes)
+  const generateFullEmbedding = (word) => {
+    if (sampleFullEmbeddings[word]) {
+      return sampleFullEmbeddings[word];
+    }
+    
+    // Fallback to generate random values
+    return Array(300).fill(0).map(() => (Math.random() * 2 - 1).toFixed(3));
+  };
+  
+  // Close the modal when clicking outside
+  const handleModalClose = (e) => {
+    if (e.target.classList.contains('modal-overlay')) {
+      setShowModal(false);
+    }
+  };
+  
   return (
     <div className="mini-visualizer">
       <h3>Interactive Word Embedding Demo</h3>
@@ -205,7 +201,7 @@ const MiniVisualizer = () => {
         Similar words appear closer together in the embedding space.
       </p>
       <p className="instruction">
-        <strong>Try it:</strong> Click on two words to see their relationship and midpoint.
+        <strong>Try it:</strong> Click on any word to see its vector representation.
       </p>
       
       <div className="canvas-container" ref={containerRef}>
@@ -223,42 +219,86 @@ const MiniVisualizer = () => {
       
       <div className="controls">
         <button 
-          className={`relationship-button ${showRelationship ? 'active' : ''}`}
-          onClick={() => setShowRelationship(!showRelationship)}
-          disabled={selectedWords.length !== 2}
-        >
-          {showRelationship ? 'Hide Relationship' : 'Show Relationship'}
-        </button>
-        
-        <button 
           className="reset-button"
           onClick={() => {
-            setSelectedWords([]);
-            setShowRelationship(false);
+            setSelectedWord(null);
+            setShowModal(false);
           }}
         >
           Reset Selection
         </button>
       </div>
       
-      {selectedWords.length === 2 && showRelationship && (
-        <div className="relationship-info">
-          <p>
-            Words <strong>{selectedWords[0]}</strong> and <strong>{selectedWords[1]}</strong> are 
-            positioned in the embedding space based on their semantic similarity.
-          </p>
-          <p>
-            The midpoint between them represents a blend of their meanings.
-          </p>
-        </div>
-      )}
-      
       <div className="explanation">
         <p>
-          This is a simplified 2D projection of word embeddings. In Luminode's full application, 
-          you can explore much richer visualizations with thousands of words in both 2D and 3D space.
+          This is a simplified 2D projection of word embeddings. In reality, word embeddings 
+          typically have hundreds of dimensions (e.g., 300) that capture different aspects of meaning.
         </p>
       </div>
+      
+      {showModal && selectedWord && (
+        <div className="modal-overlay" onClick={handleModalClose}>
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Vector Representation: "{selectedWord}"</h3>
+              <button className="close-button" onClick={() => setShowModal(false)}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="vector-section">
+                <h4>2D Projection (Visualization Coordinates)</h4>
+                <div className="vector-display">
+                  <span className="vector-bracket">[</span>
+                  {sampleWordVectors[selectedWord].map((value, index) => (
+                    <span key={index} className="vector-value">
+                      {value.toFixed(2)}
+                      {index < sampleWordVectors[selectedWord].length - 1 && <span className="vector-comma">,</span>}
+                    </span>
+                  ))}
+                  <span className="vector-bracket">]</span>
+                </div>
+                <p className="vector-explanation">
+                  These are the 2D coordinates used to position the word in the visualization above.
+                </p>
+              </div>
+              
+              <div className="vector-section">
+                <h4>Sample Full Embedding (First 10 dimensions)</h4>
+                <div className="vector-display">
+                  <span className="vector-bracket">[</span>
+                  {sampleFullEmbeddings[selectedWord].map((value, index) => (
+                    <span key={index} className="vector-value">
+                      {value.toFixed(2)}
+                      {index < sampleFullEmbeddings[selectedWord].length - 1 && <span className="vector-comma">,</span>}
+                    </span>
+                  ))}
+                  <span className="vector-bracket">]</span>
+                </div>
+                <p className="vector-explanation">
+                  In a real word embedding model, each word is represented by a vector with ~300 dimensions.
+                  Each dimension captures some aspect of the word's meaning.
+                </p>
+              </div>
+              
+              <div className="vector-section">
+                <h4>How Word Embeddings Work</h4>
+                <p>
+                  Word embeddings represent words as points in a high-dimensional space where:
+                </p>
+                <ul>
+                  <li>Similar words are positioned close together</li>
+                  <li>Relationships between words are preserved as geometric relationships</li>
+                  <li>Each dimension may capture some semantic aspect of the word</li>
+                </ul>
+                <p>
+                  These vector representations allow AI models to understand and manipulate word meanings
+                  mathematically, enabling tasks like finding similar words, completing analogies, and more.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       <style jsx>{`
         .mini-visualizer {
@@ -273,6 +313,13 @@ const MiniVisualizer = () => {
           margin-top: 0;
           margin-bottom: 1rem;
           font-size: 1.4rem;
+        }
+        
+        h4 {
+          color: #FFA500;
+          margin-top: 1rem;
+          margin-bottom: 0.5rem;
+          font-size: 1.1rem;
         }
         
         p {
@@ -328,19 +375,6 @@ const MiniVisualizer = () => {
           cursor: not-allowed;
         }
         
-        .relationship-button.active {
-          background-color: rgba(255, 165, 0, 0.3);
-          border-color: #FFA500;
-        }
-        
-        .relationship-info {
-          background-color: rgba(255, 165, 0, 0.1);
-          border-radius: 8px;
-          padding: 1rem;
-          margin-bottom: 1.5rem;
-          border-left: 3px solid #FFA500;
-        }
-        
         .explanation {
           font-size: 0.9rem;
           color: rgba(255, 255, 255, 0.7);
@@ -350,6 +384,121 @@ const MiniVisualizer = () => {
         
         strong {
           color: #FFA500;
+        }
+        
+        /* Modal styles */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.7);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+          padding: 20px;
+        }
+        
+        .modal-content {
+          background-color: rgba(26, 26, 46, 0.95);
+          border-radius: 8px;
+          width: 100%;
+          max-width: 700px;
+          max-height: 90vh;
+          overflow-y: auto;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+          border: 1px solid rgba(255, 165, 0, 0.3);
+        }
+        
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 1.5rem;
+          border-bottom: 1px solid rgba(255, 165, 0, 0.2);
+        }
+        
+        .modal-header h3 {
+          margin: 0;
+        }
+        
+        .close-button {
+          background: transparent;
+          border: none;
+          color: white;
+          font-size: 1.5rem;
+          cursor: pointer;
+          padding: 0;
+          line-height: 1;
+        }
+        
+        .modal-body {
+          padding: 1.5rem;
+        }
+        
+        .vector-section {
+          margin-bottom: 1.5rem;
+          padding-bottom: 1.5rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .vector-section:last-child {
+          border-bottom: none;
+          margin-bottom: 0;
+          padding-bottom: 0;
+        }
+        
+        .vector-display {
+          font-family: monospace;
+          background-color: rgba(0, 0, 0, 0.3);
+          padding: 1rem;
+          border-radius: 4px;
+          overflow-x: auto;
+          white-space: nowrap;
+          margin: 0.5rem 0;
+          font-size: 1.1rem;
+        }
+        
+        .vector-bracket {
+          color: #FFA500;
+          font-weight: bold;
+        }
+        
+        .vector-value {
+          color: white;
+          padding: 0 2px;
+        }
+        
+        .vector-comma {
+          color: rgba(255, 255, 255, 0.7);
+          margin-right: 4px;
+        }
+        
+        .vector-explanation {
+          font-size: 0.9rem;
+          color: rgba(255, 255, 255, 0.7);
+          font-style: italic;
+        }
+        
+        ul {
+          margin-left: 1.5rem;
+          line-height: 1.6;
+        }
+        
+        li {
+          margin-bottom: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+          .modal-content {
+            width: 95%;
+          }
+          
+          .vector-display {
+            font-size: 0.9rem;
+          }
         }
       `}</style>
     </div>
