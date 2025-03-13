@@ -20,11 +20,14 @@ export const findMidpoints = async (word1, word2, recursionDepth = 0, serverUrl)
       throw new Error('Recursion depth must be between 0 and 2');
     }
     
+    console.log(`Finding midpoints between "${word1}" and "${word2}" with depth ${recursionDepth}`);
+    
     // Call API to find the midpoint and nearest word
     const response = await axios.post(`${serverUrl}/api/findMidpoint`, {
       word1,
       word2,
-      recursionDepth
+      recursionDepth,
+      numResults: 5 // Explicitly set numResults
     });
     
     if (!response.data || !response.data.data) {
@@ -33,7 +36,23 @@ export const findMidpoints = async (word1, word2, recursionDepth = 0, serverUrl)
     
     return response.data.data;
   } catch (error) {
-    console.error('Error finding midpoints:', error);
+    // Add more specific error logging
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error(`Server error (${error.response.status}):`, error.response.data);
+      
+      if (error.response.status === 404) {
+        console.error('API endpoint not found. Please check server configuration and routes.');
+      }
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('No response received from server:', error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error('Error setting up request:', error.message);
+    }
+    
     throw error;
   }
 };

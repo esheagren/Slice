@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { findMidpoints } from '../utils/midpointSearch';
+import { findMidpoint } from '../api/embedding';
 
 const MidpointToolbar = ({ 
   words, 
@@ -12,6 +12,7 @@ const MidpointToolbar = ({
   const [word2, setWord2] = useState('');
   const [recursionDepth, setRecursionDepth] = useState(0);
   const [isComputing, setIsComputing] = useState(false);
+  const [useExactSearch, setUseExactSearch] = useState(true);
   
   const handleSearch = async () => {
     if (!word1 || !word2) {
@@ -23,7 +24,14 @@ const MidpointToolbar = ({
     setLoading(true);
     
     try {
-      const results = await findMidpoints(word1, word2, recursionDepth, serverUrl);
+      const results = await findMidpoint(
+        word1, 
+        word2, 
+        5,
+        recursionDepth,
+        useExactSearch,
+        serverUrl
+      );
       
       // Process results for visualization
       const midpointCluster = {
@@ -46,8 +54,7 @@ const MidpointToolbar = ({
           midpointLevel: 'primary',
           midpointSource: {
             fromWords: [word1, word2],
-            theoreticalMidpoint: primaryMidpoint.theoreticalMidpoint,
-            isPrimaryResult: index === 0 // Mark the first result as primary
+            isPrimaryResult: index === 0
           }
         });
       });
@@ -63,7 +70,6 @@ const MidpointToolbar = ({
               midpointLevel: 'secondary',
               midpointSource: {
                 fromWords: midpoint.endpoints,
-                theoreticalMidpoint: midpoint.theoreticalMidpoint,
                 isPrimaryResult: index === 0
               }
             });
@@ -82,7 +88,6 @@ const MidpointToolbar = ({
               midpointLevel: 'tertiary',
               midpointSource: {
                 fromWords: midpoint.endpoints,
-                theoreticalMidpoint: midpoint.theoreticalMidpoint,
                 isPrimaryResult: index === 0
               }
             });
@@ -142,6 +147,17 @@ const MidpointToolbar = ({
             <option value="1">One level (secondary midpoints)</option>
             <option value="2">Two levels (tertiary midpoints)</option>
           </select>
+        </div>
+        
+        <div className="search-mode">
+          <label className="toggle-label">
+            <input
+              type="checkbox"
+              checked={useExactSearch}
+              onChange={(e) => setUseExactSearch(e.target.checked)}
+            />
+            <span className="toggle-text">Exact search</span>
+          </label>
         </div>
         
         <button 
@@ -219,6 +235,25 @@ const MidpointToolbar = ({
         .midpoint-search-btn:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+        }
+        
+        .search-mode {
+          display: flex;
+          align-items: center;
+          margin-right: 12px;
+        }
+        
+        .toggle-label {
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          user-select: none;
+        }
+        
+        .toggle-text {
+          margin-left: 6px;
+          font-size: 13px;
+          color: #e0e0e0;
         }
       `}</style>
     </div>

@@ -158,6 +158,9 @@ const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
 
     // Always draw analogy lines when analogies exist (regardless of ruler setting)
     drawAnalogyLines(ctx, pointsRef.current);
+    
+    // Draw midpoint lines when midpoints exist 
+    drawMidpointLines(ctx, pointsRef.current);
   };
   
   // Function to draw ruler lines between points
@@ -305,16 +308,13 @@ const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
     }
   };
   
-  // Add this function after drawAnalogyLines
+  // Function to draw midpoint lines between points
   const drawMidpointLines = (ctx, points) => {
     // Find midpoint points
     const midpointPoints = points.filter(point => point.isMidpoint);
     
     // Early return if no midpoint points
     if (midpointPoints.length === 0) return;
-    
-    // Create a map to track which words form a midpoint pair
-    const midpointPairs = [];
     
     // Draw connections for each midpoint point
     midpointPoints.forEach(midpointPoint => {
@@ -381,9 +381,6 @@ const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
         ctx.stroke();
         ctx.setLineDash([]); // Reset to solid line
       }
-      
-      // Add this pair to the tracked pairs
-      midpointPairs.push([word1, word2]);
     });
   };
   
