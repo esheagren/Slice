@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Sample data for demonstrations
 const sampleNearestNeighbors = {
@@ -29,6 +29,16 @@ const InteractiveExamples = () => {
     midpoint: false,
     analogy: false
   });
+  
+  // Ensure the component is properly mounted
+  useEffect(() => {
+    // Force a re-render after component is mounted
+    const timer = setTimeout(() => {
+      setActiveExample(prev => prev);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   const toggleTechnicalDetails = (example) => {
     setShowTechnicalDetails({

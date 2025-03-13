@@ -22,6 +22,7 @@ const sampleWordVectors = {
 
 const MiniVisualizer = () => {
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
   const [hoveredWord, setHoveredWord] = useState(null);
   const [selectedWords, setSelectedWords] = useState([]);
   const [showRelationship, setShowRelationship] = useState(false);
@@ -45,6 +46,10 @@ const MiniVisualizer = () => {
     
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    
+    // Set canvas dimensions explicitly
+    canvas.width = canvasSize.width;
+    canvas.height = canvasSize.height;
     
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -173,17 +178,20 @@ const MiniVisualizer = () => {
   // Update canvas size on window resize
   useEffect(() => {
     const updateSize = () => {
-      const container = canvasRef.current?.parentElement;
-      if (container) {
-        const width = Math.min(container.clientWidth - 40, 600);
-        setCanvasSize({
-          width,
-          height: width * 0.8
-        });
-      }
+      if (!containerRef.current) return;
+      
+      const container = containerRef.current;
+      const width = Math.min(container.clientWidth - 40, 600);
+      setCanvasSize({
+        width,
+        height: width * 0.8
+      });
     };
     
+    // Initial size update
     updateSize();
+    
+    // Add resize listener
     window.addEventListener('resize', updateSize);
     
     return () => window.removeEventListener('resize', updateSize);
@@ -200,14 +208,16 @@ const MiniVisualizer = () => {
         <strong>Try it:</strong> Click on two words to see their relationship and midpoint.
       </p>
       
-      <div className="canvas-container">
+      <div className="canvas-container" ref={containerRef}>
         <canvas 
           ref={canvasRef}
-          width={canvasSize.width}
-          height={canvasSize.height}
           onMouseMove={handleMouseMove}
           onClick={handleClick}
-          style={{ cursor: hoveredWord ? 'pointer' : 'default' }}
+          style={{ 
+            cursor: hoveredWord ? 'pointer' : 'default',
+            width: `${canvasSize.width}px`,
+            height: `${canvasSize.height}px`
+          }}
         />
       </div>
       
@@ -283,11 +293,13 @@ const MiniVisualizer = () => {
           background-color: rgba(0, 0, 0, 0.3);
           border-radius: 8px;
           padding: 1rem;
+          width: 100%;
         }
         
         canvas {
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 4px;
+          display: block;
         }
         
         .controls {

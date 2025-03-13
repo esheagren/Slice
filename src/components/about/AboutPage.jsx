@@ -11,6 +11,7 @@ const AboutPage = () => {
   const containerRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [activeTab, setActiveTab] = useState('overview');
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -21,8 +22,14 @@ const AboutPage = () => {
     // Add resize listener
     window.addEventListener('resize', updateDimensions);
     
+    // Mark as loaded after a short delay to ensure components have time to initialize
+    const timer = setTimeout(() => {
+      setIsLoaded(true);
+    }, 300);
+    
     return () => {
       window.removeEventListener('resize', updateDimensions);
+      clearTimeout(timer);
     };
   }, []);
   
@@ -41,7 +48,7 @@ const AboutPage = () => {
         return (
           <>
             <Introduction />
-            <MiniVisualizer />
+            {isLoaded && <MiniVisualizer />}
           </>
         );
       case 'embeddings':
@@ -49,7 +56,7 @@ const AboutPage = () => {
       case 'features':
         return <CoreFunctionalities />;
       case 'examples':
-        return <InteractiveExamples />;
+        return isLoaded ? <InteractiveExamples /> : <div className="loading-placeholder">Loading examples...</div>;
       case 'limitations':
         return <Disclaimer />;
       default:
@@ -196,6 +203,15 @@ const AboutPage = () => {
         
         .tab-content {
           min-height: 400px;
+        }
+        
+        .loading-placeholder {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 200px;
+          font-style: italic;
+          color: rgba(255, 255, 255, 0.7);
         }
         
         @media (max-width: 768px) {
