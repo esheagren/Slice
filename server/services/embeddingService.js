@@ -226,6 +226,20 @@ class EmbeddingService {
     
     return Math.sqrt(sum);
   }
+
+  calculateMidpoint(vector1, vector2) {
+    if (!vector1 || !vector2 || vector1.length !== vector2.length) {
+      throw new Error('Invalid vectors for midpoint calculation');
+    }
+    
+    // Calculate the midpoint by averaging the vectors
+    const midpoint = new Array(vector1.length);
+    for (let i = 0; i < vector1.length; i++) {
+      midpoint[i] = (vector1[i] + vector2[i]) / 2;
+    }
+    
+    return midpoint;
+  }
 }
 
 // Create a singleton instance

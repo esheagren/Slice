@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import AnalogyToolbar from './AnalogyToolbar';
+import MidpointToolbar from './MidpointToolbar';
 
 const Tools = ({ 
   words, 
@@ -17,6 +18,7 @@ const Tools = ({
 }) => {
   
   const [showAnalogyTool, setShowAnalogyTool] = useState(false);
+  const [showMidpointTool, setShowMidpointTool] = useState(false);
   
   // Add this new function to handle the Add Neighbors button click
   const handleAddNeighbors = async () => {
@@ -44,24 +46,25 @@ const Tools = ({
       }
     }
   };
-
-  // Toggle view mode between 2D and 3D
-  const toggleViewMode = () => {
-    setViewMode(viewMode === '2D' ? '3D' : '2D');
-  };
-
-  // Add this new function to handle the Ruler button click
+  
   const toggleRuler = () => {
     setRulerActive(!rulerActive);
   };
-
-  // Update function name and state variable
+  
   const toggleAnalogyTool = () => {
-    console.log("Analogy button clicked, current state:", showAnalogyTool);
     setShowAnalogyTool(!showAnalogyTool);
-    console.log("New state should be:", !showAnalogyTool);
+    if (showMidpointTool) setShowMidpointTool(false);
   };
-
+  
+  const toggleMidpointTool = () => {
+    setShowMidpointTool(!showMidpointTool);
+    if (showAnalogyTool) setShowAnalogyTool(false);
+  };
+  
+  const toggleViewMode = () => {
+    setViewMode(viewMode === '2D' ? '3D' : '2D');
+  };
+  
   return (
     <div className="tools-container">
       <div className="tools-row">
@@ -110,10 +113,26 @@ const Tools = ({
               </span>
             </div>
           </button>
+          
+          {/* Add Midpoint Button */}
+          <button 
+            className={`tool-button ${showMidpointTool ? 'active' : ''}`}
+            onClick={toggleMidpointTool}
+            disabled={!wordsValid || loading || words.length < 2}
+            aria-label="Find Midpoints"
+            title={words.length < 2 ? "Need at least 2 words for midpoints" : "Find midpoints between words"}
+          >
+            <div className="tooltip">
+              <span className="icon">⚬</span>
+              <span className="tooltip-text">
+                <p>Find words at the midpoint between two selected words.</p>
+              </span>
+            </div>
+          </button>
         </div>
         
         <div className="right-tools">
-          <button 
+          <button
             className="view-button"
             onClick={toggleViewMode}
             disabled={loading || !wordsValid || words.length === 0}
@@ -123,9 +142,20 @@ const Tools = ({
         </div>
       </div>
       
-      {/* Analogy Toolbar - Replace modal with toolbar */}
+      {/* Analogy Toolbar */}
       {showAnalogyTool && (
         <AnalogyToolbar 
+          words={words}
+          serverUrl={serverUrl}
+          setMidpointClusters={setMidpointClusters}
+          setLoading={setLoading}
+          setError={setError}
+        />
+      )}
+      
+      {/* Midpoint Toolbar */}
+      {showMidpointTool && (
+        <MidpointToolbar 
           words={words}
           serverUrl={serverUrl}
           setMidpointClusters={setMidpointClusters}
@@ -139,45 +169,52 @@ const Tools = ({
           display: flex;
           flex-direction: column;
           width: 100%;
-          gap: 8px;
         }
         
         .tools-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          width: 100%;
         }
         
         .left-tools {
           display: flex;
-          gap: 0.75rem;
+          gap: 8px;
         }
         
         .right-tools {
           display: flex;
-          justify-content: flex-end;
+          gap: 8px;
         }
         
         .tool-button {
-          padding: 0.75rem 1rem;
-          border-radius: 6px;
-          background: linear-gradient(135deg, rgba(255, 157, 66, 0.8) 0%, rgba(255, 200, 55, 0.8) 100%);
+          width: 40px;
+          height: 40px;
+          border-radius: 8px;
+          background: #2a2a2c;
           color: white;
           border: none;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          font-size: 0.95rem;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-          position: relative;
           display: flex;
           align-items: center;
           justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: relative;
+          font-size: 18px;
         }
         
-        .icon {
-          font-size: 1.5rem;
-          display: inline-block;
+        .tool-button:hover {
+          background: #3a3a3c;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .tool-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
         }
         
         .tooltip {
@@ -187,45 +224,26 @@ const Tools = ({
         
         .tooltip-text {
           visibility: hidden;
-          width: 220px;
+          width: 200px;
           background-color: #333;
           color: #fff;
-          text-align: left;
+          text-align: center;
           border-radius: 6px;
-          padding: 10px;
+          padding: 8px;
           position: absolute;
           z-index: 1;
-          left: 110%;
-          top: 50%;
-          transform: translateY(-50%);
+          bottom: 125%;
+          left: 50%;
+          transform: translateX(-50%);
           opacity: 0;
           transition: opacity 0.3s;
+          font-size: 12px;
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-          font-weight: normal;
-          font-size: 0.8rem;
-          line-height: 1.3;
-        }
-        
-        .tooltip-text::after {
-          content: "";
-          position: absolute;
-          top: 100%;
-          left: 50%;
-          margin-left: -5px;
-          border-width: 5px;
-          border-style: solid;
-          border-color: #333 transparent transparent transparent;
         }
         
         .tooltip-text p {
-          margin: 4px 0 0 0;
-          line-height: 1.3;
-        }
-        
-        .tooltip-text strong {
-          font-size: 0.85rem;
-          display: block;
-          margin-bottom: 2px;
+          margin: 0;
+          line-height: 1.4;
         }
         
         .tooltip:hover .tooltip-text {
@@ -267,4 +285,4 @@ const Tools = ({
   );
 };
 
-export default Tools; 
+export default Tools;

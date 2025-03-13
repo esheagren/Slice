@@ -305,6 +305,88 @@ const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
     }
   };
   
+  // Add this function after drawAnalogyLines
+  const drawMidpointLines = (ctx, points) => {
+    // Find midpoint points
+    const midpointPoints = points.filter(point => point.isMidpoint);
+    
+    // Early return if no midpoint points
+    if (midpointPoints.length === 0) return;
+    
+    // Create a map to track which words form a midpoint pair
+    const midpointPairs = [];
+    
+    // Draw connections for each midpoint point
+    midpointPoints.forEach(midpointPoint => {
+      if (!midpointPoint.midpointSource || !midpointPoint.midpointSource.fromWords) return;
+      
+      // Only draw lines for primary results (the closest word to the theoretical midpoint)
+      if (!midpointPoint.midpointSource.isPrimaryResult) return;
+      
+      // Get the source words that this midpoint is between
+      const [word1, word2] = midpointPoint.midpointSource.fromWords;
+      
+      // Find the points for these words
+      const sourcePoint1 = points.find(p => p.word === word1);
+      const sourcePoint2 = points.find(p => p.word === word2);
+      
+      if (!sourcePoint1 || !sourcePoint2) return;
+      
+      // Draw line from source1 to midpoint
+      ctx.beginPath();
+      ctx.moveTo(sourcePoint1.x, sourcePoint1.y);
+      ctx.lineTo(midpointPoint.x, midpointPoint.y);
+      
+      // Use different colors based on midpoint level
+      let lineColor;
+      if (midpointPoint.midpointLevel === 'primary') {
+        lineColor = 'rgba(52, 168, 83, 0.6)'; // Green for primary midpoints
+      } else if (midpointPoint.midpointLevel === 'secondary') {
+        lineColor = 'rgba(66, 133, 244, 0.6)'; // Blue for secondary midpoints
+      } else {
+        lineColor = 'rgba(251, 188, 5, 0.6)'; // Yellow for tertiary midpoints
+      }
+      
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 3]); // Dashed line
+      ctx.stroke();
+      
+      // Draw line from midpoint to source2
+      ctx.beginPath();
+      ctx.moveTo(midpointPoint.x, midpointPoint.y);
+      ctx.lineTo(sourcePoint2.x, sourcePoint2.y);
+      ctx.stroke();
+      ctx.setLineDash([]); // Reset to solid line
+      
+      // Add a small circle at the theoretical midpoint position (if we had coordinates)
+      // This is just a visual indicator of where the true midpoint would be
+      if (midpointPoint.midpointSource.theoreticalMidpoint) {
+        // We don't have actual coordinates for the theoretical midpoint
+        // So we'll just place it at the midpoint of the line between source1 and source2
+        const theoreticalX = (sourcePoint1.x + sourcePoint2.x) / 2;
+        const theoreticalY = (sourcePoint1.y + sourcePoint2.y) / 2;
+        
+        ctx.beginPath();
+        ctx.arc(theoreticalX, theoreticalY, 3, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fill();
+        
+        // Draw a dotted line from theoretical midpoint to the actual nearest word
+        ctx.beginPath();
+        ctx.moveTo(theoreticalX, theoreticalY);
+        ctx.lineTo(midpointPoint.x, midpointPoint.y);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.setLineDash([2, 2]); // Fine dotted line
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset to solid line
+      }
+      
+      // Add this pair to the tracked pairs
+      midpointPairs.push([word1, word2]);
+    });
+  };
+  
   // Handle mouse interactions
   const handleMouseMove = (e) => {
     if (!canvasRef.current || !pointsRef.current.length) return;
