@@ -112,7 +112,6 @@ const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
       const isPrimary = words.includes(point.word);
       const isContextSample = point.isContextSample === true;
       const isAnalogy = point.isAnalogy === true;
-      const analogySource = point.analogySource || null;
       
       // Determine radius based on point type
       let radius;
@@ -134,8 +133,7 @@ const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
         radius,
         isPrimary,
         isContextSample,
-        isAnalogy,
-        analogySource
+        isAnalogy
       });
       
       // Draw point
@@ -157,6 +155,9 @@ const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
     if (rulerActive && words.length >= 2) {
       drawRulerLines(ctx, pointsRef.current);
     }
+
+    // Always draw analogy lines when analogies exist (regardless of ruler setting)
+    drawAnalogyLines(ctx, pointsRef.current);
   };
   
   // Function to draw ruler lines between points
@@ -216,6 +217,90 @@ const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(similarityText, midX, midY);
+      }
+    }
+  };
+  
+  // Add the drawAnalogyLines function right after drawRulerLines
+  const drawAnalogyLines = (ctx, points) => {
+    // Find primary words and analogy points
+    const primaryPoints = points.filter(point => point.isPrimary);
+    const analogyPoints = points.filter(point => point.isAnalogy);
+    
+    // Early return if no analogy points
+    if (analogyPoints.length === 0) return;
+    
+    // Create a map to track which words form an analogy pair
+    const analogyPairs = [];
+    
+    // Draw connections for each analogy point
+    analogyPoints.forEach(analogyPoint => {
+      if (!analogyPoint.analogySource || !analogyPoint.analogySource.fromWords) return;
+      
+      // In an analogy like "man:woman::king:queen", king is the relevant source word
+      // that we should connect to the result (queen)
+      const word3 = analogyPoint.analogySource.fromWords[2]; // This should be "king" in man:woman::king:queen
+      
+      if (word3) {
+        const sourcePoint = points.find(p => p.word === word3);
+        if (!sourcePoint) return;
+        
+        // Draw line from source to analogy
+        ctx.beginPath();
+        ctx.moveTo(sourcePoint.x, sourcePoint.y);
+        ctx.lineTo(analogyPoint.x, analogyPoint.y);
+        ctx.strokeStyle = 'rgba(156, 39, 176, 0.6)'; // Semi-transparent purple for analogy lines
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 3]); // Dotted line for analogies
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset to solid line
+        
+        // Add a small arrow indicator pointing to the analogy result
+        const angle = Math.atan2(analogyPoint.y - sourcePoint.y, analogyPoint.x - sourcePoint.x);
+        const arrowSize = 6;
+        const arrowX = analogyPoint.x - Math.cos(angle) * (analogyPoint.radius + arrowSize);
+        const arrowY = analogyPoint.y - Math.sin(angle) * (analogyPoint.radius + arrowSize);
+        
+        ctx.beginPath();
+        ctx.moveTo(
+          arrowX - Math.cos(angle - Math.PI/6) * arrowSize,
+          arrowY - Math.sin(angle - Math.PI/6) * arrowSize
+        );
+        ctx.lineTo(arrowX, arrowY);
+        ctx.lineTo(
+          arrowX - Math.cos(angle + Math.PI/6) * arrowSize,
+          arrowY - Math.sin(angle + Math.PI/6) * arrowSize
+        );
+        ctx.strokeStyle = 'rgba(156, 39, 176, 0.8)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        // Add this pair to the tracked pairs
+        analogyPairs.push([sourcePoint.word, analogyPoint.word]);
+      }
+    });
+    
+    // Now draw lines between the first analogy pair (e.g., man:woman)
+    // This assumes the first two primary words form a pair
+    if (primaryPoints.length >= 2) {
+      const point1 = primaryPoints[0];
+      const point2 = primaryPoints[1];
+      
+      // Check if this pair is already included in our analogy pairs
+      const pairExists = analogyPairs.some(pair => 
+        (pair[0] === point1.word && pair[1] === point2.word) || 
+        (pair[0] === point2.word && pair[1] === point1.word)
+      );
+      
+      if (!pairExists) {
+        ctx.beginPath();
+        ctx.moveTo(point1.x, point1.y);
+        ctx.lineTo(point2.x, point2.y);
+        ctx.strokeStyle = 'rgba(156, 39, 176, 0.6)'; // Semi-transparent purple for analogy lines
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 3]); // Dotted line for analogies
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset to solid line
       }
     }
   };
