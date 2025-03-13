@@ -428,3 +428,23 @@ input:checked + .toggle-slider:before {
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 157, 66, 0.1);
 }
+
+/* Add these styles to your existing App.css */
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-container {
+  flex: 1;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.main-layout {
+  position: relative;
+  z-index: 10;
+  min-height: calc(100vh - 60px - 80px); /* Adjust based on navbar and footer heights */
+  padding-bottom: 2rem;
+}
