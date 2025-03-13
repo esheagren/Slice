@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AnalogyToolbar from './AnalogyToolbar';
 import MidpointToolbar from './MidpointToolbar';
+import LoadingAnimation from './visualization/LoadingAnimation';
 
 const Tools = ({ 
   words, 
@@ -19,6 +20,24 @@ const Tools = ({
   
   const [showAnalogyTool, setShowAnalogyTool] = useState(false);
   const [showMidpointTool, setShowMidpointTool] = useState(false);
+  const [showLoadingAnimation, setShowLoadingAnimation] = useState(false);
+  const loadingOverlayDimensions = { width: 120, height: 120 };
+  
+  // Add loading animation after half a second delay
+  useEffect(() => {
+    let timer;
+    if (loading) {
+      timer = setTimeout(() => {
+        setShowLoadingAnimation(true);
+      }, 500); // 500ms delay
+    } else {
+      setShowLoadingAnimation(false);
+    }
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [loading]);
   
   // Add this new function to handle the Add Neighbors button click
   const handleAddNeighbors = async () => {
@@ -68,79 +87,91 @@ const Tools = ({
   return (
     <div className="tools-container">
       <div className="tools-row">
-        <div className="left-tools">
+        <div className="section-label explore">EXPLORE</div>
+        
+        <div className="tools-group explore-group">
           <button 
-            className="tool-button" 
+            className="labeled-button" 
             onClick={handleAddNeighbors}
             disabled={!wordsValid || loading}
             aria-label="Add Neighbors"
+            title="Find similar words"
+            data-tooltip="Find similar words"
           >
-            <div className="tooltip">
-              <span className="icon">+</span>
-              <span className="tooltip-text">
-                <p>Finds semantically similar words to your current selection</p>
-              </span>
-            </div>
+            <span className="button-icon">+</span>
+            <span className="button-label">Similar Words</span>
+            {loading && <span className="button-loading-indicator"></span>}
           </button>
           
-          {/* Measure Distance Button */}
           <button 
-            className={`tool-button ${rulerActive ? 'active' : ''}`} 
+            className={`labeled-button ${rulerActive ? 'active' : ''}`} 
             onClick={toggleRuler}
             disabled={!wordsValid || loading || words.length < 2}
             aria-label="Measure Distance"
+            title={words.length < 2 ? "Need at least 2 words to measure distance" : "Measure semantic distance"}
+            data-tooltip={words.length < 2 ? "Need at least 2 words to measure distance" : "Measure semantic distance"}
           >
-            <div className="tooltip">
-              <span className="icon">↔</span>
-              <span className="tooltip-text">
-                <p>Measures semantic distance between words</p>
-              </span>
-            </div>
+            <span className="button-icon">↔</span>
+            <span className="button-label">Distance</span>
           </button>
-          
-          {/* Analogy Button */}
+        </div>
+        
+        <div className="section-divider"></div>
+        
+        <div className="section-label analyze">ANALYZE</div>
+        
+        <div className="tools-group analyze-group">
           <button 
-            className={`tool-button ${showAnalogyTool ? 'active' : ''}`}
-            onClick={toggleAnalogyTool}
-            disabled={!wordsValid || loading || words.length < 3}
-            aria-label="Explore Analogies"
-            title={words.length < 3 ? "Need at least 3 words for analogies" : "Explore word analogies"}
-          >
-            <div className="tooltip">
-              <span className="icon">≈</span>
-              <span className="tooltip-text">
-                <p>Explore analogies between words</p>
-              </span>
-            </div>
-          </button>
-          
-          {/* Midpoint Button */}
-          <button 
-            className={`tool-button ${showMidpointTool ? 'active' : ''}`}
+            className={`labeled-button ${showMidpointTool ? 'active' : ''}`}
             onClick={toggleMidpointTool}
             disabled={!wordsValid || loading || words.length < 2}
             aria-label="Find Midpoints"
             title={words.length < 2 ? "Need at least 2 words for midpoints" : "Find midpoints between words"}
+            data-tooltip={words.length < 2 ? "Need at least 2 words for midpoints" : "Find midpoints between words"}
           >
-            <div className="tooltip">
-              <span className="icon">•</span>
-              <span className="tooltip-text">
-                <p>Find words at the midpoint between two selected words</p>
-              </span>
-            </div>
+            <span className="button-icon">•</span>
+            <span className="button-label">Midpoints</span>
+            {showMidpointTool && loading && <span className="button-loading-indicator"></span>}
+          </button>
+          
+          <button 
+            className={`labeled-button ${showAnalogyTool ? 'active' : ''}`}
+            onClick={toggleAnalogyTool}
+            disabled={!wordsValid || loading || words.length < 3}
+            aria-label="Explore Analogies"
+            title={words.length < 3 ? "Need at least 3 words for analogies" : "Explore word analogies"}
+            data-tooltip={words.length < 3 ? "Need at least 3 words for analogies" : "Explore word analogies"}
+          >
+            <span className="button-icon">≈</span>
+            <span className="button-label">Analogies</span>
+            {showAnalogyTool && loading && <span className="button-loading-indicator"></span>}
           </button>
         </div>
         
-        <div className="right-tools">
+        <div className="section-divider"></div>
+        
+        <div className="section-label view">VIEW</div>
+        
+        <div className="tools-group view-group">
           <button
-            className="view-button"
+            className="labeled-button view-button"
             onClick={toggleViewMode}
             disabled={loading || !wordsValid || words.length === 0}
+            title={viewMode === '2D' ? "Switch to 3D view" : "Switch to 2D view"}
+            data-tooltip={viewMode === '2D' ? "Switch to 3D view" : "Switch to 2D view"}
           >
-            {viewMode === '2D' ? '2D' : '3D'}
+            <span className="button-label">{viewMode === '2D' ? '2D' : '3D'}</span>
           </button>
         </div>
       </div>
+      
+      {/* Loading animation overlay */}
+      {loading && showLoadingAnimation && (
+        <div className="loading-overlay">
+          <LoadingAnimation width={loadingOverlayDimensions.width} height={loadingOverlayDimensions.height} />
+          <div className="loading-text">Processing...</div>
+        </div>
+      )}
       
       {/* Analogy Toolbar */}
       {showAnalogyTool && (
@@ -170,133 +201,227 @@ const Tools = ({
           flex-direction: column;
           width: 100%;
           margin-bottom: 0.75rem;
+          position: relative;
         }
         
         .tools-row {
           display: flex;
-          justify-content: space-between;
-          align-items: center;
           width: 100%;
+          border-bottom: 1px solid rgba(60, 60, 70, 0.2);
+          padding-bottom: 8px;
+          align-items: center;
         }
         
-        .left-tools {
-          display: flex;
-          gap: 8px;
+        .section-label {
+          font-size: 12px;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          font-weight: 500;
+          font-family: sans-serif;
+          padding: 0 12px;
         }
         
-        .right-tools {
-          display: flex;
-          gap: 8px;
+        .section-label.explore {
+          color: rgba(66, 133, 244, 0.8);
         }
         
-        .tool-button {
-          width: 32px;
-          height: 32px;
-          border-radius: 3px;
-          background: rgba(30, 30, 34, 0.8);
-          color: rgba(240, 240, 245, 0.9);
-          border: 1px solid rgba(60, 60, 70, 0.5);
+        .section-label.analyze {
+          color: rgba(52, 168, 83, 0.8);
+        }
+        
+        .section-label.view {
+          color: rgba(180, 180, 190, 0.7);
+        }
+        
+        .section-divider {
+          width: 1px;
+          height: 24px;
+          background: rgba(60, 60, 70, 0.2);
+          margin: 0 8px;
+        }
+        
+        .tools-group {
           display: flex;
           align-items: center;
-          justify-content: center;
+          margin-right: 16px;
+          position: relative;
+        }
+        
+        .explore-group .labeled-button {
+          border-color: rgba(66, 133, 244, 0.3);
+        }
+        
+        .explore-group .labeled-button:hover {
+          border-color: rgba(66, 133, 244, 0.5);
+        }
+        
+        .explore-group .labeled-button.active {
+          background: rgba(66, 133, 244, 0.15);
+          border-color: rgba(66, 133, 244, 0.5);
+        }
+        
+        .analyze-group .labeled-button {
+          border-color: rgba(52, 168, 83, 0.3);
+        }
+        
+        .analyze-group .labeled-button:hover {
+          border-color: rgba(52, 168, 83, 0.5);
+        }
+        
+        .analyze-group .labeled-button.active {
+          background: rgba(52, 168, 83, 0.15);
+          border-color: rgba(52, 168, 83, 0.5);
+        }
+        
+        .view-group {
+          margin-left: auto;
+          margin-right: 0;
+        }
+        
+        .labeled-button {
+          display: flex;
+          align-items: center;
+          height: 32px;
+          padding: 0 12px;
+          border-radius: 3px;
+          background: rgba(30, 30, 34, 0.4);
+          color: rgba(240, 240, 245, 0.9);
+          border: 1px solid rgba(60, 60, 70, 0.3);
           cursor: pointer;
           transition: all 0.15s ease;
-          position: relative;
-          font-size: 18px;
           font-family: sans-serif;
+          margin-right: 8px;
+          position: relative;
         }
         
-        .tool-button:hover {
-          background: rgba(40, 40, 45, 0.9);
-          border-color: rgba(80, 80, 90, 0.7);
+        .labeled-button:last-child {
+          margin-right: 0;
+        }
+        
+        .labeled-button:hover {
+          background: rgba(40, 40, 45, 0.6);
+          border-color: rgba(80, 80, 90, 0.5);
           color: rgba(255, 255, 255, 1);
         }
         
-        .tool-button:disabled {
+        .labeled-button:disabled {
           opacity: 0.4;
           cursor: not-allowed;
         }
         
-        .tooltip {
-          position: relative;
-          display: inline-block;
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+        .button-icon {
+          font-size: 16px;
+          margin-right: 6px;
         }
         
-        .tooltip-text {
-          visibility: hidden;
-          width: 160px;
-          background-color: rgba(20, 20, 24, 0.95);
-          color: #f0f0f5;
-          text-align: left;
-          border-radius: 3px;
-          padding: 6px 8px;
-          position: absolute;
-          z-index: 1;
-          left: 120%;
-          top: 50%;
-          transform: translateY(-50%);
-          opacity: 0;
-          transition: opacity 0.2s;
-          font-size: 12px;
-          font-family: sans-serif;
-          border: 1px solid rgba(80, 80, 90, 0.3);
+        .button-label {
+          font-size: 13px;
+          font-weight: 400;
         }
         
-        .tooltip-text::after {
-          content: "";
-          position: absolute;
-          top: 50%;
-          right: 100%;
-          margin-top: -5px;
-          border-width: 5px;
-          border-style: solid;
-          border-color: transparent rgba(20, 20, 24, 0.95) transparent transparent;
-        }
-        
-        .tooltip-text p {
-          margin: 0;
-          line-height: 1.3;
-        }
-        
-        .tooltip:hover .tooltip-text {
-          visibility: visible;
-          opacity: 1;
+        .labeled-button.active {
+          background: rgba(30, 30, 40, 0.8);
+          border-color: rgba(100, 100, 120, 0.6);
+          color: rgba(255, 255, 255, 1);
+          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
         }
         
         .view-button {
-          padding: 0.4rem 0.6rem;
-          border-radius: 3px;
-          background: rgba(30, 30, 34, 0.8);
-          color: rgba(240, 240, 245, 0.9);
-          border: 1px solid rgba(60, 60, 70, 0.5);
-          font-weight: 400;
-          cursor: pointer;
-          transition: all 0.15s ease;
-          font-size: 0.9rem;
+          min-width: 50px;
+          justify-content: center;
+        }
+        
+        /* Button loading indicator */
+        .button-loading-indicator {
+          width: 12px;
+          height: 12px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-radius: 50%;
+          border-top-color: rgba(255, 255, 255, 0.9);
+          animation: spin 0.8s linear infinite;
+          margin-left: 8px;
+        }
+        
+        /* Loading overlay with the LoadingAnimation component */
+        .loading-overlay {
+          position: absolute;
+          top: 42px;
+          left: 0;
+          right: 0;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          z-index: 100;
+          pointer-events: none;
+          background: rgba(20, 20, 24, 0.7);
+          border-radius: 8px;
+          padding: 10px;
+          margin: 0 auto;
+          width: fit-content;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          border: 1px solid rgba(60, 60, 70, 0.3);
+        }
+        
+        .loading-text {
+          color: rgba(255, 255, 255, 0.9);
+          font-size: 14px;
           font-family: sans-serif;
+          margin-top: 8px;
+          font-weight: 500;
         }
         
-        .view-button:hover {
-          background: rgba(40, 40, 45, 0.9);
-          border-color: rgba(80, 80, 90, 0.7);
-          color: rgba(255, 255, 255, 1);
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
         
-        .view-button:disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
+        /* Custom tooltip using data-tooltip attribute */
+        [data-tooltip] {
+          position: relative;
         }
         
-        .tool-button.active {
-          background: rgba(30, 30, 40, 0.95);
-          border-color: rgba(100, 100, 120, 0.8);
-          color: rgba(255, 255, 255, 1);
-          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+        [data-tooltip]:hover::before {
+          content: attr(data-tooltip);
+          position: absolute;
+          top: -40px;
+          left: 50%;
+          transform: translateX(-50%);
+          padding: 6px 10px;
+          background-color: rgba(255, 255, 255, 0.97);
+          color: rgba(10, 10, 12, 0.95);
+          font-size: 13px;
+          font-weight: 500;
+          white-space: nowrap;
+          border-radius: 3px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          z-index: 100;
+          pointer-events: none;
+          font-family: sans-serif;
+          border: 1px solid rgba(200, 200, 210, 0.5);
+        }
+        
+        [data-tooltip]:hover::after {
+          content: '';
+          position: absolute;
+          top: -10px;
+          left: 50%;
+          transform: translateX(-50%);
+          border-width: 5px;
+          border-style: solid;
+          border-color: rgba(255, 255, 255, 0.97) transparent transparent transparent;
+          z-index: 100;
+          pointer-events: none;
+        }
+        
+        /* Hide default browser tooltips */
+        [title] {
+          position: relative;
+        }
+        
+        /* Prevent the default browser tooltip */
+        [title]:hover::before,
+        [title]:hover::after {
+          display: none;
         }
       `}</style>
     </div>

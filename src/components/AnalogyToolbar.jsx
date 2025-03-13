@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { findAnalogy } from '../utils/findAnalogy';
-import './AnalogyToolbar.css';
 
 const AnalogyToolbar = ({ 
   words, 
@@ -48,9 +47,10 @@ const AnalogyToolbar = ({
       
       // Automatically add all results to visualization
       addAnalogyToVisualization(processedResults);
+      
     } catch (error) {
       console.error('Error computing analogy:', error);
-      setError('Failed to compute analogy: ' + (error.response?.data?.error || error.message));
+      setError(`Failed to compute analogy: ${error.message || 'Unknown error'}`);
     } finally {
       setIsComputing(false);
       setLoading(false);
@@ -58,10 +58,7 @@ const AnalogyToolbar = ({
   };
   
   const addAnalogyToVisualization = (results) => {
-    if (!results || results.length === 0) return;
-    
-    console.log(`Adding ${results.length} analogy results to visualization`);
-    
+    // Create a cluster for the analogy results
     const analogyCluster = {
       type: 'analogy',
       source: {
@@ -69,11 +66,11 @@ const AnalogyToolbar = ({
         word2,
         word3
       },
-      words: results.map(item => ({
-        word: item.word,
-        distance: item.distance,
+      words: results.map(result => ({
+        word: result.word,
+        distance: result.distance,
         isAnalogy: true,
-        analogySource: {  // Add source information for drawing connections
+        analogySource: {
           fromWords: [word1, word2, word3]
         }
       }))
@@ -92,13 +89,13 @@ const AnalogyToolbar = ({
           disabled={isComputing}
           className="analogy-select"
         >
-          <option value="">Select</option>
+          <option value="">First</option>
           {words.map((word, index) => (
             <option key={`w1-${index}`} value={word}>{word}</option>
           ))}
         </select>
         
-        <span className="analogy-connector">is to</span>
+        <span className="analogy-connector">→</span>
         
         <select 
           value={word2}
@@ -106,7 +103,7 @@ const AnalogyToolbar = ({
           disabled={isComputing}
           className="analogy-select"
         >
-          <option value="">Select</option>
+          <option value="">Second</option>
           {words.map((word, index) => (
             <option key={`w2-${index}`} value={word}>{word}</option>
           ))}
@@ -120,22 +117,88 @@ const AnalogyToolbar = ({
           disabled={isComputing}
           className="analogy-select"
         >
-          <option value="">Select</option>
+          <option value="">Third</option>
           {words.map((word, index) => (
             <option key={`w3-${index}`} value={word}>{word}</option>
           ))}
         </select>
         
-        <span className="analogy-connector">is to</span>
+        <span className="analogy-connector">→</span>
         
         <button 
           className="analogy-compute-button"
           onClick={handleComputeAnalogy}
           disabled={isComputing || !word1 || !word2 || !word3}
         >
-          {isComputing ? 'Computing...' : 'Find'}
+          Find
         </button>
       </div>
+      
+      <style jsx>{`
+        .analogy-toolbar {
+          background: rgba(26, 26, 30, 0.8);
+          border-radius: 3px;
+          padding: 10px;
+          margin-top: 8px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          border: 1px solid rgba(60, 60, 70, 0.5);
+        }
+        
+        .analogy-setup {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        
+        .analogy-select {
+          flex: 1;
+          padding: 6px 8px;
+          border-radius: 3px;
+          background: rgba(30, 30, 34, 0.8);
+          color: rgba(240, 240, 245, 0.9);
+          border: 1px solid rgba(60, 60, 70, 0.5);
+          font-family: sans-serif;
+          font-size: 13px;
+          transition: all 0.15s ease;
+        }
+        
+        .analogy-select:hover, .analogy-select:focus {
+          border-color: rgba(80, 80, 90, 0.7);
+          outline: none;
+        }
+        
+        .analogy-connector {
+          color: rgba(200, 200, 210, 0.8);
+          font-size: 14px;
+          font-family: sans-serif;
+        }
+        
+        .analogy-compute-button {
+          padding: 6px 12px;
+          border-radius: 3px;
+          background: rgba(30, 30, 34, 0.9);
+          color: rgba(240, 240, 245, 0.9);
+          border: 1px solid rgba(60, 60, 70, 0.5);
+          font-weight: 400;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          font-family: sans-serif;
+          font-size: 13px;
+        }
+        
+        .analogy-compute-button:hover {
+          background: rgba(40, 40, 45, 0.9);
+          border-color: rgba(80, 80, 90, 0.7);
+          color: rgba(255, 255, 255, 1);
+        }
+        
+        .analogy-compute-button:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+      `}</style>
     </div>
   );
 };
