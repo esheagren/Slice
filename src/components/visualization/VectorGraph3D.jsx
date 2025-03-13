@@ -18,6 +18,7 @@ const VectorGraph3D = ({ coordinates, words, containerRef, rulerActive }) => {
   const objectsRef = useRef([]);
   const pointsRef = useRef([]);
   const rulerLinesRef = useRef([]);
+  const analogyLinesRef = useRef([]);
   
   // Set up canvas size based on container
   useEffect(() => {
@@ -63,6 +64,12 @@ const VectorGraph3D = ({ coordinates, words, containerRef, rulerActive }) => {
   useEffect(() => {
     if (coordinates.length > 0) {
       setup3DScene();
+      
+      if (rulerActive) {
+        addRulerLines();
+      }
+      
+      addAnalogyLines();
     }
     
     // Clean up 3D scene when component unmounts
@@ -87,8 +94,18 @@ const VectorGraph3D = ({ coordinates, words, containerRef, rulerActive }) => {
         });
         rulerLinesRef.current = [];
       }
+      
+      // Clean up analogy lines
+      if (analogyLinesRef.current.length > 0) {
+        analogyLinesRef.current.forEach(line => {
+          if (line.geometry) line.geometry.dispose();
+          if (line.material) line.material.dispose();
+          if (line.parent) line.parent.remove(line);
+        });
+        analogyLinesRef.current = [];
+      }
     };
-  }, [coordinates, rulerActive]);
+  }, [coordinates, words, rulerActive]);
   
   // Set up 3D scene
   const setup3DScene = () => {
@@ -432,6 +449,92 @@ const VectorGraph3D = ({ coordinates, words, containerRef, rulerActive }) => {
       // Remove tooltip when mouse leaves canvas
       removeTooltip();
     });
+  };
+  
+  // Add analogy lines between primary points
+  const addAnalogyLines = () => {
+    if (!sceneRef.current || coordinates.length === 0) return;
+    
+    // Clean up existing analogy lines
+    analogyLinesRef.current.forEach(line => {
+      if (line.parent) line.parent.remove(line);
+      if (line.geometry) line.geometry.dispose();
+      if (line.material) line.material.dispose();
+    });
+    analogyLinesRef.current = [];
+    
+    // Find primary words and analogy points
+    const primaryPoints = coordinates.filter(point => words.includes(point.word));
+    const analogyPoints = coordinates.filter(point => point.isAnalogy);
+    
+    // Early return if no analogy points
+    if (analogyPoints.length === 0) return;
+    
+    // Draw connections for each analogy point
+    analogyPoints.forEach(analogyPoint => {
+      if (!analogyPoint.analogySource || !analogyPoint.analogySource.fromWords) return;
+      
+      // In an analogy like "man:woman::king:queen", king is the relevant source word
+      // that should connect to the result (queen)
+      const word3 = analogyPoint.analogySource.fromWords[2]; // This should be "king" in the example
+      
+      if (word3) {
+        const sourcePoint = coordinates.find(p => p.word === word3);
+        if (!sourcePoint) return;
+        
+        // Create line geometry
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(sourcePoint.x, sourcePoint.y, sourcePoint.z || 0),
+          new THREE.Vector3(analogyPoint.x, analogyPoint.y, analogyPoint.z || 0)
+        ]);
+        
+        // Create dashed line material for analogy connections
+        const lineMaterial = new THREE.LineDashedMaterial({
+          color: 0x9c27b0, // Purple for analogy lines
+          linewidth: 1,
+          scale: 1,
+          dashSize: 0.1,
+          gapSize: 0.05,
+          opacity: 0.7,
+          transparent: true
+        });
+        
+        // Create line
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        line.computeLineDistances(); // Required for dashed lines
+        sceneRef.current.add(line);
+        analogyLinesRef.current.push(line);
+      }
+    });
+    
+    // Draw line between the first two primary words (e.g., man:woman)
+    if (primaryPoints.length >= 2) {
+      const point1 = primaryPoints[0];
+      const point2 = primaryPoints[1];
+      
+      // Create line geometry
+      const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(point1.x, point1.y, point1.z || 0),
+        new THREE.Vector3(point2.x, point2.y, point2.z || 0)
+      ]);
+      
+      // Create dashed line material
+      const lineMaterial = new THREE.LineDashedMaterial({
+        color: 0x9c27b0, // Purple for analogy lines
+        linewidth: 1,
+        scale: 1,
+        dashSize: 0.1,
+        gapSize: 0.05,
+        opacity: 0.7,
+        transparent: true
+      });
+      
+      // Create line
+      const line = new THREE.Line(lineGeometry, lineMaterial);
+      line.computeLineDistances(); // Required for dashed lines
+      sceneRef.current.add(line);
+      analogyLinesRef.current.push(line);
+    }
   };
   
   return (
