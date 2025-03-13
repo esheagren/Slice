@@ -1,7 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+
+// Sample data for a simple vector visualization
+const sampleVectors = {
+  "king": [0.2, 0.8],
+  "queen": [0.3, 0.9],
+  "man": [-0.1, 0.7],
+  "woman": [0.0, 0.8],
+  "computer": [0.8, -0.3],
+  "technology": [0.7, -0.2],
+  "science": [0.6, -0.1],
+  "art": [-0.7, -0.5]
+};
 
 const Introduction = () => {
   const [expandedSection, setExpandedSection] = useState(null);
+  const canvasRef = useRef(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 300, height: 200 });
   
   const toggleSection = (section) => {
     if (expandedSection === section) {
@@ -10,6 +24,101 @@ const Introduction = () => {
       setExpandedSection(section);
     }
   };
+  
+  // Scale coordinates to fit canvas
+  const scaleCoordinates = (coords, width, height) => {
+    const padding = 30;
+    const xScale = (width - padding * 2) / 2;
+    const yScale = (height - padding * 2) / 2;
+    
+    return [
+      (coords[0] * xScale) + (width / 2),
+      (coords[1] * -yScale) + (height / 2)
+    ];
+  };
+  
+  // Draw a simple vector visualization
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const { width, height } = canvasSize;
+    
+    // Set canvas dimensions
+    canvas.width = width;
+    canvas.height = height;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Draw axes
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1;
+    
+    // Horizontal axis
+    ctx.beginPath();
+    ctx.moveTo(0, height / 2);
+    ctx.lineTo(width, height / 2);
+    ctx.stroke();
+    
+    // Vertical axis
+    ctx.beginPath();
+    ctx.moveTo(width / 2, 0);
+    ctx.lineTo(width / 2, height);
+    ctx.stroke();
+    
+    // Draw vectors
+    Object.entries(sampleVectors).forEach(([word, vector]) => {
+      const [x, y] = scaleCoordinates(vector, width, height);
+      
+      // Draw dot
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Draw label
+      ctx.font = '10px Arial';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.textAlign = 'center';
+      ctx.fillText(word, x, y - 8);
+      
+      // Draw line from origin to point (vector representation)
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255, 165, 0, 0.2)';
+      ctx.lineWidth = 1;
+      ctx.moveTo(width / 2, height / 2);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    });
+    
+    // Draw origin label
+    ctx.font = '10px Arial';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.textAlign = 'center';
+    ctx.fillText('origin', width / 2, height / 2 + 15);
+    
+  }, [canvasSize]);
+  
+  // Update canvas size on window resize
+  useEffect(() => {
+    const updateSize = () => {
+      const width = Math.min(window.innerWidth - 40, 500);
+      setCanvasSize({
+        width,
+        height: width * 0.6
+      });
+    };
+    
+    // Initial update
+    updateSize();
+    
+    // Add resize listener
+    window.addEventListener('resize', updateSize);
+    
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
   
   return (
     <div className="about-section">
@@ -26,6 +135,28 @@ const Introduction = () => {
           connections between words. By visualizing word embeddings—mathematical representations of meaning—Luminode 
           reveals unexpected relationships and facilitates intuitive understanding of complex concepts.
         </p>
+        
+        <div className="vector-visualization">
+          <h3>Word Embeddings as Vectors</h3>
+          <p>
+            In modern AI systems, words are represented as vectors—points in a high-dimensional space. 
+            Words with similar meanings are positioned closer together in this space.
+          </p>
+          <div className="canvas-container">
+            <canvas 
+              ref={canvasRef}
+              style={{ 
+                width: `${canvasSize.width}px`,
+                height: `${canvasSize.height}px`
+              }}
+            />
+          </div>
+          <div className="visualization-caption">
+            A simplified 2D representation of word vectors. Notice how related words cluster together: 
+            "king", "queen", "man", and "woman" form one group, while "computer", "technology", and "science" 
+            form another.
+          </div>
+        </div>
         
         <div className="info-cards">
           <div 
@@ -162,11 +293,50 @@ const Introduction = () => {
           margin-right: auto;
         }
         
+        .vector-visualization {
+          margin: 2rem 0;
+          text-align: center;
+        }
+        
+        .vector-visualization h3 {
+          color: #FFA500;
+          margin-bottom: 1rem;
+          font-size: 1.4rem;
+        }
+        
+        .vector-visualization p {
+          max-width: 700px;
+          margin: 0 auto 1.5rem;
+        }
+        
+        .canvas-container {
+          background-color: rgba(0, 0, 0, 0.3);
+          border-radius: 8px;
+          padding: 1rem;
+          margin: 0 auto 1rem;
+          display: inline-block;
+        }
+        
+        canvas {
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+          display: block;
+        }
+        
+        .visualization-caption {
+          font-size: 0.9rem;
+          color: rgba(255, 255, 255, 0.7);
+          max-width: 700px;
+          margin: 0 auto;
+          font-style: italic;
+        }
+        
         .info-cards {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
           gap: 1.5rem;
           margin-bottom: 2rem;
+          margin-top: 2rem;
         }
         
         .info-card {
