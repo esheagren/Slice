@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import NavBar from './components/NavBar.jsx'
 import HomePage from './components/HomePage.jsx'
-import AboutPage from './components/AboutPage.jsx'
+import AboutPage from './components/about/AboutPage.jsx'
 import './App.css'
 
 function App() {
