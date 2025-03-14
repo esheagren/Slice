@@ -14,7 +14,9 @@ const PORT = process.env.PORT || 5000;
 
 // Update the CORS middleware configuration
 app.use(cors({
-  origin: '*',  // Allow all origins during development
+  origin: process.env.VERCEL_ENV === 'production' 
+    ? ['https://vector-mind.vercel.app', 'https://luminode.vercel.app'] // Add your Vercel domains
+    : '*',  // Allow all origins during development
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
@@ -28,10 +30,13 @@ app.use('/api', apiRoutes);
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(join(__dirname, '../client/build')));
-  
+  // For Vercel, we don't need to serve static files here
+  // as they are handled by Vercel's static deployment
   app.get('*', (req, res) => {
-    res.sendFile(join(__dirname, '../client/build/index.html'));
+    // Only handle API routes, let Vercel handle the rest
+    if (!req.path.startsWith('/api/')) {
+      res.status(404).send('Not found');
+    }
   });
 }
 
@@ -69,5 +74,10 @@ const startServer = (port) => {
   });
 };
 
-// Start the server
-startServer(PORT); 
+// Start the server if not in Vercel serverless environment
+if (process.env.VERCEL_ENV !== 'production') {
+  startServer(PORT);
+}
+
+// Export for Vercel serverless function
+export default app; 

@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "build-index": "node server/scripts/buildEmbeddingIndex.js"
+    "build-index": "node server/scripts/buildEmbeddingIndex.js",
+    "vercel-build": "vite build"
   },
   "dependencies": {
     "an-array-of-english-words": "^2.0.0",

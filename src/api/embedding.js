@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-// Default server URL - should be configurable
-const DEFAULT_SERVER_URL = 'http://localhost:5001';
+// Use relative URLs in production, localhost in development
+const DEFAULT_SERVER_URL = import.meta.env.PROD
+  ? '' // Empty string means use relative URLs
+  : 'http://localhost:5001';
 
 /**
  * Find nearest neighbors for a word
