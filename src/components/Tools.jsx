@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import AnalogyToolbar from './AnalogyToolbar';
 import MidpointToolbar from './MidpointToolbar';
-import LoadingAnimation from './visualization/LoadingAnimation';
 
 const Tools = ({ 
   words, 
@@ -20,24 +19,6 @@ const Tools = ({
   
   const [showAnalogyTool, setShowAnalogyTool] = useState(false);
   const [showMidpointTool, setShowMidpointTool] = useState(false);
-  const [showLoadingAnimation, setShowLoadingAnimation] = useState(false);
-  const loadingOverlayDimensions = { width: 120, height: 120 };
-  
-  // Add loading animation after half a second delay
-  useEffect(() => {
-    let timer;
-    if (loading) {
-      timer = setTimeout(() => {
-        setShowLoadingAnimation(true);
-      }, 500); // 500ms delay
-    } else {
-      setShowLoadingAnimation(false);
-    }
-    
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [loading]);
   
   // Add this new function to handle the Add Neighbors button click
   const handleAddNeighbors = async () => {
@@ -164,14 +145,6 @@ const Tools = ({
           </button>
         </div>
       </div>
-      
-      {/* Loading animation overlay */}
-      {loading && showLoadingAnimation && (
-        <div className="loading-overlay">
-          <LoadingAnimation width={loadingOverlayDimensions.width} height={loadingOverlayDimensions.height} />
-          <div className="loading-text">Processing...</div>
-        </div>
-      )}
       
       {/* Analogy Toolbar */}
       {showAnalogyTool && (
@@ -342,37 +315,13 @@ const Tools = ({
           margin-left: 8px;
         }
         
-        /* Loading overlay with the LoadingAnimation component */
-        .loading-overlay {
-          position: absolute;
-          top: 42px;
-          left: 0;
-          right: 0;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          z-index: 100;
-          pointer-events: none;
-          background: rgba(20, 20, 24, 0.7);
-          border-radius: 8px;
-          padding: 10px;
-          margin: 0 auto;
-          width: fit-content;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-          border: 1px solid rgba(60, 60, 70, 0.3);
-        }
-        
-        .loading-text {
-          color: rgba(255, 255, 255, 0.9);
-          font-size: 14px;
-          font-family: sans-serif;
-          margin-top: 8px;
-          font-weight: 500;
-        }
-        
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
         
         /* Custom tooltip using data-tooltip attribute */

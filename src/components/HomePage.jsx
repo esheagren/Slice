@@ -148,6 +148,7 @@ const HomePage = () => {
               viewMode={viewMode}
               setViewMode={setViewMode}
               rulerActive={rulerActive}
+              loading={loading}
             />
           </div>
         </div>

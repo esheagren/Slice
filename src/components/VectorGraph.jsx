@@ -5,6 +5,7 @@ import VectorGraph2D from './visualization/VectorGraph2D';
 import VectorGraph3D from './visualization/VectorGraph3D';
 import LoadingOverlay from './visualization/LoadingOverlay';
 import ErrorOverlay from './visualization/ErrorOverlay';
+import SimpleLoadingAnimation from './visualization/SimpleLoadingAnimation';
 
 const VectorGraph = ({ 
   words, 
@@ -13,22 +14,38 @@ const VectorGraph = ({
   serverUrl = 'http://localhost:5001', 
   viewMode = '2D', 
   setViewMode,
-  rulerActive // Receive as prop instead of managing state
+  rulerActive, // Receive as prop instead of managing state
+  loading // Add loading prop
 }) => {
   const [coordinates, setCoordinates] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [midpointClusters, setMidpointClusters] = useState([]);
+  const [showLoadingAnimation, setShowLoadingAnimation] = useState(false);
   
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
+  
+  // Add loading animation after half a second delay
+  useEffect(() => {
+    let timer;
+    if (loading) {
+      timer = setTimeout(() => {
+        setShowLoadingAnimation(true);
+      }, 500); // 500ms delay
+    } else {
+      setShowLoadingAnimation(false);
+    }
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [loading]);
   
   // Fetch coordinates when words or viewMode changes
   useEffect(() => {
     if (!words || words.length === 0) return;
     
     const fetchCoordinates = async () => {
-      setLoading(true);
       setError(null);
       
       try {
@@ -106,8 +123,6 @@ const VectorGraph = ({
       } catch (error) {
         console.error('Error fetching coordinates:', error);
         setError(error.response?.data?.error || 'Failed to get visualization data');
-      } finally {
-        setLoading(false);
       }
     };
     
@@ -147,8 +162,6 @@ const VectorGraph = ({
 
   return (
     <div className="graph-container" ref={containerRef}>
-      {loading && <LoadingOverlay />}
-      
       {error && <ErrorOverlay error={error} />}
       
       <div ref={canvasRef}>
@@ -169,6 +182,16 @@ const VectorGraph = ({
         )}
       </div>
       
+      {/* Loading animation overlay */}
+      {loading && showLoadingAnimation && (
+        <div className="loading-overlay">
+          <SimpleLoadingAnimation 
+            width={containerRef.current?.clientWidth || 800} 
+            height={containerRef.current?.clientHeight || 600} 
+          />
+        </div>
+      )}
+      
       <style jsx>{`
         .graph-container {
           width: 100%;
@@ -187,6 +210,26 @@ const VectorGraph = ({
           left: 20px;
           background-color: transparent;
           border-radius: 8px;
+        }
+        
+        .loading-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background-color: rgba(26, 26, 46, 0.4);
+          z-index: 100;
+          border-radius: 12px;
+          animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
       `}</style>
     </div>
