@@ -15,6 +15,7 @@ class EmbeddingService {
     this.wordToId = new Map();
     this.idToWord = [];
     this.wordVectors = new Map(); // Store only the vectors we need
+    this.pcaComponents = null; // Added for getPCAComponents method
   }
 
   async loadEmbeddings() {
@@ -444,6 +445,49 @@ class EmbeddingService {
     
     const analogyVector = this.calculateAnalogy(vector1, vector2, vector3);
     return this.findVectorNeighbors(analogyVector, numResults, [word1, word2, word3], useExactSearch);
+  }
+
+  // Approximate a vector from 2D or 3D coordinates
+  // This is an approximation since we can't perfectly reverse PCA
+  approximateVectorFromCoordinates(x, y, z = null) {
+    // Get the PCA components
+    const components = this.getPCAComponents();
+    
+    if (!components) {
+      throw new Error('PCA components not available. Run PCA first.');
+    }
+    
+    // Create a vector in the reduced space
+    const reducedVector = z !== null ? [x, y, z] : [x, y];
+    
+    // Get the dimensionality of the original space
+    const originalDimension = this.embeddingDimension;
+    
+    // Create a zero vector in the original space
+    const approximatedVector = new Array(originalDimension).fill(0);
+    
+    // Project back to the original space using the PCA components
+    // This is a simple approximation - multiply each component by the corresponding coordinate
+    for (let i = 0; i < reducedVector.length; i++) {
+      const component = components[i];
+      
+      // Add the weighted component to the approximated vector
+      for (let j = 0; j < originalDimension; j++) {
+        approximatedVector[j] += component[j] * reducedVector[i];
+      }
+    }
+    
+    return approximatedVector;
+  }
+
+  // Get the PCA components for projecting back to the original space
+  getPCAComponents() {
+    if (!this.pcaComponents) {
+      // If PCA hasn't been run yet, return null
+      return null;
+    }
+    
+    return this.pcaComponents;
   }
 }
 

@@ -61,14 +61,14 @@ export function calculateMidpoint(a, b) {
 }
 
 /**
- * Perform Principal Component Analysis (PCA) to reduce vectors to 3D
+ * Performs Principal Component Analysis (PCA) on a set of vectors
  * @param {number[][]} vectors - Array of vectors to project
  * @param {number} dimensions - Number of dimensions to reduce to (2 or 3)
- * @returns {number[][]} Array of 2D or 3D coordinates
+ * @returns {Object} Object containing the projected coordinates and PCA components
  */
 export function performPCA(vectors, dimensions = 2) {
   if (!vectors || vectors.length === 0) {
-    return [];
+    return { coordinates: [], components: [] };
   }
   
   // Validate dimensions
@@ -145,11 +145,17 @@ export function performPCA(vectors, dimensions = 2) {
   }
   
   // Project the original vectors onto the reduced space
-  return vectors.map(vector => {
+  const projectedVectors = vectors.map(vector => {
     const projection = [];
     for (let pc = 0; pc < dimensions; pc++) {
       projection.push(vector.reduce((sum, val, i) => sum + val * principalComponents[pc][i], 0));
     }
     return projection;
   });
+  
+  // Return both the coordinates and the components
+  return {
+    coordinates: projectedVectors,
+    components: principalComponents.slice(0, dimensions)
+  };
 } 

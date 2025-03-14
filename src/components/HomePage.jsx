@@ -17,6 +17,7 @@ const HomePage = () => {
   const [viewMode, setViewMode] = useState('2D'); // Default to 2D view
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [rulerActive, setRulerActive] = useState(false);
+  const [searchActive, setSearchActive] = useState(false);
 
   const handleWordSelect = (word) => {
     if (!words.includes(word)) {
@@ -136,6 +137,8 @@ const HomePage = () => {
               setViewMode={setViewMode}
               rulerActive={rulerActive}
               setRulerActive={setRulerActive}
+              searchActive={searchActive}
+              setSearchActive={setSearchActive}
             />
           </div>
           
@@ -149,6 +152,7 @@ const HomePage = () => {
               setViewMode={setViewMode}
               rulerActive={rulerActive}
               loading={loading}
+              searchActive={searchActive}
             />
           </div>
         </div>

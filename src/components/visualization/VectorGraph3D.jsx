@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { createTooltip, removeTooltip } from './VectorTooltip';
@@ -10,7 +10,7 @@ import {
   formatSimilarity 
 } from './VectorUtils';
 
-const VectorGraph3D = ({ coordinates, words, containerRef, rulerActive }) => {
+const VectorGraph3D = ({ coordinates, words, containerRef, rulerActive, searchActive, onSearchPoint }) => {
   const canvasRef = useRef(null);
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
@@ -19,6 +19,9 @@ const VectorGraph3D = ({ coordinates, words, containerRef, rulerActive }) => {
   const pointsRef = useRef([]);
   const rulerLinesRef = useRef([]);
   const analogyLinesRef = useRef([]);
+  const [cursorPosition, setCursorPosition] = useState(null);
+  const crosshairRef = useRef(null);
+  const coordsLabelRef = useRef(null);
   
   // Set up canvas size based on container
   useEffect(() => {
@@ -223,13 +226,13 @@ const VectorGraph3D = ({ coordinates, words, containerRef, rulerActive }) => {
     
     // Process each coordinate
     coordinates.forEach(point => {
-      // Determine if this is a primary word or a related word
-      const isPrimaryWord = words.includes(point.word);
-      
-      // Get coordinates
+      // Extract coordinates
       const x = point.x;
       const y = point.y;
-      const z = point.hasOwnProperty('z') ? point.z : 0; // Use z if available, otherwise 0
+      const z = Object.prototype.hasOwnProperty.call(point, 'z') ? point.z : 0; // Use z if available, otherwise 0
+      
+      // Determine if this is a primary word or a related word
+      const isPrimaryWord = words.includes(point.word);
       
       // Get color for the point
       const colorHex = getPointColor(point.word, words, isPrimaryWord);
@@ -275,7 +278,6 @@ const VectorGraph3D = ({ coordinates, words, containerRef, rulerActive }) => {
       });
       
       const points = new THREE.Points(geometry, material);
-      points.userData = { isDataPoint: true };
       sceneRef.current.add(points);
       objectsRef.current.push(points);
     }
@@ -292,7 +294,6 @@ const VectorGraph3D = ({ coordinates, words, containerRef, rulerActive }) => {
       });
       
       const points = new THREE.Points(geometry, material);
-      points.userData = { isDataPoint: true };
       sceneRef.current.add(points);
       objectsRef.current.push(points);
     }
@@ -401,10 +402,8 @@ const VectorGraph3D = ({ coordinates, words, containerRef, rulerActive }) => {
     }
   };
   
-  // Set up raycasting for tooltips in 3D
+  // Setup raycasting for mouse interactions
   const setupRaycasting = (canvas) => {
-    if (!sceneRef.current) return;
-    
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     
@@ -414,40 +413,94 @@ const VectorGraph3D = ({ coordinates, words, containerRef, rulerActive }) => {
       mouse.x = ((event.clientX - rect.left) / canvas.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / canvas.height) * 2 + 1;
       
-      // Update the raycaster
-      raycaster.setFromCamera(mouse, sceneRef.current.children.find(child => child.isCamera));
-      
-      // Find intersections with points
-      const intersects = raycaster.intersectObjects(objectsRef.current.filter(obj => obj.userData?.isDataPoint));
-      
-      if (intersects.length > 0) {
-        canvas.style.cursor = 'pointer';
+      // If in search mode, update cursor position
+      if (searchActive && sceneRef.current && rendererRef.current) {
+        // Cast a ray from the camera to the scene
+        const camera = sceneRef.current.children.find(child => child.isCamera);
+        raycaster.setFromCamera(mouse, camera);
         
-        // Find the closest point to the intersection
-        const intersection = intersects[0].point;
-        let closestPoint = null;
-        let minDistance = Infinity;
+        // Create or update a plane that's perpendicular to the camera
+        const planeNormal = new THREE.Vector3(0, 0, 1);
+        planeNormal.applyQuaternion(camera.quaternion);
+        const plane = new THREE.Plane(planeNormal, 0);
         
-        pointsRef.current.forEach(point => {
-          const distance = intersection.distanceTo(point.position);
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestPoint = point;
-          }
+        // Find the intersection point of the ray with the plane
+        const intersectionPoint = new THREE.Vector3();
+        raycaster.ray.intersectPlane(plane, intersectionPoint);
+        
+        // Update cursor position
+        setCursorPosition({
+          x: intersectionPoint.x,
+          y: intersectionPoint.y,
+          z: intersectionPoint.z
         });
         
-        if (closestPoint) {
-          createTooltip(closestPoint, event);
-        }
+        // Update or create crosshair
+        updateCrosshair(intersectionPoint);
+        
+        // Update or create coordinates label
+        updateCoordsLabel(intersectionPoint, camera);
       } else {
-        canvas.style.cursor = 'default';
-        removeTooltip();
+        // Normal tooltip behavior
+        if (sceneRef.current && rendererRef.current) {
+          const camera = sceneRef.current.children.find(child => child.isCamera);
+          raycaster.setFromCamera(mouse, camera);
+          
+          // Find intersections with points
+          const intersects = raycaster.intersectObjects(objectsRef.current);
+          
+          if (intersects.length > 0) {
+            const intersectedObject = intersects[0].object;
+            const pointData = pointsRef.current.find(p => p.object === intersectedObject);
+            
+            if (pointData) {
+              // Show tooltip
+              createTooltip(
+                pointData.word,
+                event.clientX,
+                event.clientY,
+                pointData.truncatedVector,
+                pointData.isPrimary,
+                pointData.isAnalogy,
+                pointData.analogySource
+              );
+              
+              // Change cursor to pointer
+              canvas.style.cursor = 'pointer';
+            } else {
+              // Hide tooltip and reset cursor
+              removeTooltip();
+              canvas.style.cursor = 'default';
+            }
+          } else {
+            // Hide tooltip and reset cursor
+            removeTooltip();
+            canvas.style.cursor = 'default';
+          }
+        }
+        
+        // Remove crosshair and coords label if they exist
+        removeCrosshair();
+        removeCoordsLabel();
+        setCursorPosition(null);
       }
     });
     
+    // Add event listener for mouse leave
     canvas.addEventListener('mouseleave', () => {
-      // Remove tooltip when mouse leaves canvas
       removeTooltip();
+      if (!searchActive) {
+        removeCrosshair();
+        removeCoordsLabel();
+        setCursorPosition(null);
+      }
+    });
+    
+    // Add event listener for mouse click in search mode
+    canvas.addEventListener('click', () => {
+      if (searchActive && cursorPosition) {
+        onSearchPoint(cursorPosition.x, cursorPosition.y, cursorPosition.z);
+      }
     });
   };
   
@@ -536,6 +589,108 @@ const VectorGraph3D = ({ coordinates, words, containerRef, rulerActive }) => {
       analogyLinesRef.current.push(line);
     }
   };
+  
+  // Create or update crosshair at the given position
+  const updateCrosshair = (position) => {
+    if (!sceneRef.current) return;
+    
+    // Remove existing crosshair
+    removeCrosshair();
+    
+    // Create new crosshair
+    const crosshairGroup = new THREE.Group();
+    crosshairRef.current = crosshairGroup;
+    
+    // Create crosshair lines
+    const lineLength = 0.2;
+    const lineColor = new THREE.Color(0xffffff);
+    
+    // X axis line
+    const xGeometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(position.x - lineLength, position.y, position.z),
+      new THREE.Vector3(position.x + lineLength, position.y, position.z)
+    ]);
+    const xLine = new THREE.Line(
+      xGeometry,
+      new THREE.LineBasicMaterial({ color: lineColor, transparent: true, opacity: 0.7 })
+    );
+    crosshairGroup.add(xLine);
+    
+    // Y axis line
+    const yGeometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(position.x, position.y - lineLength, position.z),
+      new THREE.Vector3(position.x, position.y + lineLength, position.z)
+    ]);
+    const yLine = new THREE.Line(
+      yGeometry,
+      new THREE.LineBasicMaterial({ color: lineColor, transparent: true, opacity: 0.7 })
+    );
+    crosshairGroup.add(yLine);
+    
+    // Z axis line
+    const zGeometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(position.x, position.y, position.z - lineLength),
+      new THREE.Vector3(position.x, position.y, position.z + lineLength)
+    ]);
+    const zLine = new THREE.Line(
+      zGeometry,
+      new THREE.LineBasicMaterial({ color: lineColor, transparent: true, opacity: 0.7 })
+    );
+    crosshairGroup.add(zLine);
+    
+    // Add crosshair to scene
+    sceneRef.current.add(crosshairGroup);
+  };
+  
+  // Remove crosshair from scene
+  const removeCrosshair = () => {
+    if (crosshairRef.current && sceneRef.current) {
+      sceneRef.current.remove(crosshairRef.current);
+      crosshairRef.current = null;
+    }
+  };
+  
+  // Create or update coordinates label
+  const updateCoordsLabel = (position, camera) => {
+    if (!sceneRef.current) return;
+    
+    // Remove existing label
+    removeCoordsLabel();
+    
+    // Create text with coordinates
+    const coordsText = `(${position.x.toFixed(3)}, ${position.y.toFixed(3)}, ${position.z.toFixed(3)})`;
+    const sprite = createTextSprite(coordsText, {
+      fontsize: 24,
+      backgroundColor: { r: 0, g: 0, b: 0, a: 0.7 },
+      textColor: { r: 255, g: 255, b: 255, a: 1.0 },
+      padding: 8
+    });
+    
+    // Position the label above the crosshair
+    sprite.position.set(position.x, position.y + 0.3, position.z);
+    
+    // Make the label face the camera
+    sprite.quaternion.copy(camera.quaternion);
+    
+    // Store reference and add to scene
+    coordsLabelRef.current = sprite;
+    sceneRef.current.add(sprite);
+  };
+  
+  // Remove coordinates label from scene
+  const removeCoordsLabel = () => {
+    if (coordsLabelRef.current && sceneRef.current) {
+      sceneRef.current.remove(coordsLabelRef.current);
+      coordsLabelRef.current = null;
+    }
+  };
+  
+  // Update cursor style based on search mode
+  useEffect(() => {
+    if (canvasRef.current) {
+      canvasRef.current.style.cursor = searchActive ? 'crosshair' : 'default';
+    }
+  }, [searchActive]);
   
   return (
     <canvas ref={canvasRef} className="vector-canvas" />

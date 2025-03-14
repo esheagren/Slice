@@ -3,10 +3,11 @@ import { createTooltip, removeTooltip } from './VectorTooltip';
 import { getPointColor, calculateCosineSimilarity, formatSimilarity } from './VectorUtils';
 import SimpleLoadingAnimation from './SimpleLoadingAnimation';
 
-const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
+const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive, searchActive, onSearchPoint }) => {
   const canvasRef = useRef(null);
   const pointsRef = useRef([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [cursorPosition, setCursorPosition] = useState(null);
   
   useEffect(() => {
     setIsLoading(coordinates.length === 0);
@@ -161,6 +162,52 @@ const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
     
     // Draw midpoint lines when midpoints exist 
     drawMidpointLines(ctx, pointsRef.current);
+
+    // Draw cursor position and crosshair if in search mode
+    if (searchActive && cursorPosition) {
+      ctx.save();
+      
+      // Draw crosshair
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.lineWidth = 1;
+      
+      // Horizontal line
+      ctx.beginPath();
+      ctx.moveTo(0, cursorPosition.y);
+      ctx.lineTo(canvas.width, cursorPosition.y);
+      ctx.stroke();
+      
+      // Vertical line
+      ctx.beginPath();
+      ctx.moveTo(cursorPosition.x, 0);
+      ctx.lineTo(cursorPosition.x, canvas.height);
+      ctx.stroke();
+      
+      // Draw coordinates text
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.font = '12px Arial';
+      const coordText = `(${cursorPosition.actualX.toFixed(3)}, ${cursorPosition.actualY.toFixed(3)})`;
+      const textWidth = ctx.measureText(coordText).width;
+      
+      // Background for text
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(
+        cursorPosition.x + 10,
+        cursorPosition.y - 20,
+        textWidth + 10,
+        20
+      );
+      
+      // Text
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.fillText(
+        coordText,
+        cursorPosition.x + 15,
+        cursorPosition.y - 5
+      );
+      
+      ctx.restore();
+    }
   };
   
   // Function to draw ruler lines between points
@@ -384,55 +431,141 @@ const VectorGraph2D = ({ coordinates, words, containerRef, rulerActive }) => {
     });
   };
   
-  // Handle mouse interactions
+  // Handle mouse move for cursor tracking in search mode
   const handleMouseMove = (e) => {
-    if (!canvasRef.current || !pointsRef.current.length) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     
-    const rect = canvasRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
     
-    // Check if mouse is over any point
-    let hoveredPoint = null;
+    // Find the closest point to the cursor
+    const points = pointsRef.current;
+    if (points.length === 0) return;
     
-    for (const point of pointsRef.current) {
-      const distance = Math.sqrt(
-        Math.pow(mouseX - point.x, 2) + Math.pow(mouseY - point.y, 2)
-      );
+    // If search mode is active, update cursor position
+    if (searchActive) {
+      // Get the canvas dimensions
+      const width = canvas.width;
+      const height = canvas.height;
       
-      if (distance <= point.radius) {
-        hoveredPoint = point;
-        break;
-      }
-    }
-    
-    if (hoveredPoint) {
-      canvasRef.current.style.cursor = 'pointer';
-      createTooltip(hoveredPoint, e);
+      // Calculate the min/max values for scaling
+      const xValues = points.map(p => p.x);
+      const yValues = points.map(p => p.y);
+      const minX = Math.min(...xValues);
+      const maxX = Math.max(...xValues);
+      const minY = Math.min(...yValues);
+      const maxY = Math.max(...yValues);
+      
+      // Calculate padding
+      const padding = Math.min(width, height) * 0.1;
+      const plotWidth = width - 2 * padding;
+      const plotHeight = height - 2 * padding;
+      
+      // Reverse the scaling to get the actual coordinates
+      const unscaleX = (canvasX) => ((canvasX - padding) / plotWidth) * (maxX - minX) + minX;
+      const unscaleY = (canvasY) => ((canvasY - padding) / plotHeight) * (maxY - minY) + minY;
+      
+      // Calculate the actual coordinates
+      const actualX = unscaleX(x);
+      const actualY = unscaleY(y);
+      
+      setCursorPosition({ x, y, actualX, actualY });
     } else {
-      canvasRef.current.style.cursor = 'default';
-      removeTooltip();
+      // Normal tooltip behavior for non-search mode
+      // Find the closest point
+      let closestPoint = null;
+      let minDistance = Infinity;
+      
+      for (const point of points) {
+        const dx = point.x - x;
+        const dy = point.y - y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < minDistance && distance < 30) {
+          minDistance = distance;
+          closestPoint = point;
+        }
+      }
+      
+      // Show tooltip for the closest point
+      if (closestPoint) {
+        createTooltip(
+          closestPoint.word,
+          e.clientX,
+          e.clientY,
+          closestPoint.truncatedVector,
+          closestPoint.isPrimary,
+          closestPoint.isAnalogy,
+          closestPoint.analogySource
+        );
+      } else {
+        removeTooltip();
+      }
+      
+      setCursorPosition(null);
     }
   };
   
+  // Handle mouse click for search
+  const handleClick = () => {
+    if (!searchActive || !cursorPosition) return;
+    
+    // Call the onSearchPoint function with the actual coordinates
+    onSearchPoint(cursorPosition.actualX, cursorPosition.actualY);
+  };
+  
+  // Handle mouse leave
   const handleMouseLeave = () => {
     removeTooltip();
+    if (!searchActive) {
+      setCursorPosition(null);
+    }
   };
+  
+  // Set up event listeners
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
+    
+    if (searchActive) {
+      canvas.addEventListener('click', handleClick);
+      canvas.style.cursor = 'crosshair';
+    } else {
+      canvas.style.cursor = 'default';
+    }
+    
+    return () => {
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
+      
+      if (searchActive) {
+        canvas.removeEventListener('click', handleClick);
+      }
+    };
+  }, [searchActive, cursorPosition]);
+  
+  // Redraw when cursor position changes
+  useEffect(() => {
+    if (searchActive && !isLoading) {
+      drawVisualization();
+    }
+  }, [cursorPosition, searchActive, isLoading]);
   
   return (
     <>
-      {isLoading ? (
-        <SimpleLoadingAnimation 
-          width={containerRef.current?.clientWidth || 800} 
-          height={containerRef.current?.clientHeight || 600} 
-        />
-      ) : (
-        <canvas 
-          ref={canvasRef} 
-          className="vector-canvas"
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-        />
+      <canvas 
+        ref={canvasRef} 
+        className="vector-canvas"
+      />
+      {isLoading && (
+        <div className="loading-container">
+          <SimpleLoadingAnimation width={400} height={300} />
+        </div>
       )}
     </>
   );

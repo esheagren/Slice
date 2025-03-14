@@ -14,13 +14,15 @@ const VectorGraph = ({
   serverUrl = 'http://localhost:5001', 
   viewMode = '2D', 
   setViewMode,
-  rulerActive, // Receive as prop instead of managing state
-  loading // Add loading prop
+  rulerActive,
+  searchActive,
+  loading
 }) => {
   const [coordinates, setCoordinates] = useState([]);
   const [error, setError] = useState(null);
   const [midpointClusters, setMidpointClusters] = useState([]);
   const [showLoadingAnimation, setShowLoadingAnimation] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
   
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
@@ -160,6 +162,34 @@ const VectorGraph = ({
     }
   }, [viewMode]);
 
+  // Function to find nearest neighbors to a point
+  const findNearestNeighbors = async (x, y, z = null) => {
+    try {
+      // Create the request payload
+      const payload = {
+        coordinates: viewMode === '3D' ? { x, y, z } : { x, y },
+        numResults: 3, // Get top 3 nearest neighbors
+        dimensions: viewMode === '3D' ? 3 : 2
+      };
+      
+      // Make API call to find nearest neighbors
+      const response = await axios.post(`${serverUrl}/api/findNearestByCoordinates`, payload);
+      
+      // Update search results state
+      setSearchResults(response.data.data.nearestWords);
+    } catch (error) {
+      console.error('Error finding nearest neighbors:', error);
+      setError('Failed to find nearest words');
+    }
+  };
+
+  // Reset search results when search mode is turned off
+  useEffect(() => {
+    if (!searchActive) {
+      setSearchResults([]);
+    }
+  }, [searchActive]);
+  
   return (
     <div className="graph-container" ref={containerRef}>
       {error && <ErrorOverlay error={error} />}
@@ -171,6 +201,8 @@ const VectorGraph = ({
             words={words} 
             containerRef={containerRef}
             rulerActive={rulerActive}
+            searchActive={searchActive}
+            onSearchPoint={findNearestNeighbors}
           />
         ) : (
           <VectorGraph3D 
@@ -178,9 +210,26 @@ const VectorGraph = ({
             words={words} 
             containerRef={containerRef}
             rulerActive={rulerActive}
+            searchActive={searchActive}
+            onSearchPoint={findNearestNeighbors}
           />
         )}
       </div>
+      
+      {/* Search Results Display */}
+      {searchActive && searchResults.length > 0 && (
+        <div className="search-results">
+          <h3>Nearest Words</h3>
+          <ul>
+            {searchResults.map((result, index) => (
+              <li key={index}>
+                <span className="word">{result.word}</span>
+                <span className="distance">{result.distance.toFixed(4)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       
       {/* Loading animation overlay */}
       {loading && showLoadingAnimation && (
@@ -227,9 +276,59 @@ const VectorGraph = ({
           animation: fadeIn 0.3s ease-in-out;
         }
         
+        .search-results {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          background-color: rgba(30, 30, 50, 0.8);
+          border-radius: 8px;
+          padding: 15px;
+          width: 200px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          z-index: 50;
+          animation: slideIn 0.3s ease-out;
+        }
+        
+        .search-results h3 {
+          margin: 0 0 10px 0;
+          font-size: 16px;
+          color: #fff;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          padding-bottom: 8px;
+        }
+        
+        .search-results ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        
+        .search-results li {
+          display: flex;
+          justify-content: space-between;
+          padding: 6px 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .search-results .word {
+          font-weight: 500;
+          color: #fff;
+        }
+        
+        .search-results .distance {
+          color: #aaa;
+          font-size: 0.9em;
+        }
+        
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+          from { transform: translateX(30px); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
         }
       `}</style>
     </div>

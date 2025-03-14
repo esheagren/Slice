@@ -14,7 +14,9 @@ const Tools = ({
   viewMode,
   setViewMode,
   rulerActive,
-  setRulerActive
+  setRulerActive,
+  searchActive,
+  setSearchActive
 }) => {
   
   const [showAnalogyTool, setShowAnalogyTool] = useState(false);
@@ -49,6 +51,10 @@ const Tools = ({
   
   const toggleRuler = () => {
     setRulerActive(!rulerActive);
+  };
+  
+  const toggleSearch = () => {
+    setSearchActive(!searchActive);
   };
   
   const toggleAnalogyTool = () => {
@@ -94,6 +100,18 @@ const Tools = ({
           >
             <span className="button-icon">↔</span>
             <span className="button-label">Distance</span>
+          </button>
+          
+          <button 
+            className={`labeled-button ${searchActive ? 'active' : ''}`} 
+            onClick={toggleSearch}
+            disabled={!wordsValid || loading}
+            aria-label="Search Vector Space"
+            title="Search for nearest words to a point"
+            data-tooltip="Search for nearest words to a point"
+          >
+            <span className="button-icon">🔍</span>
+            <span className="button-label">Search</span>
           </button>
         </div>
         

@@ -97,7 +97,12 @@ router.post('/getVectorCoordinates', async (req, res) => {
     const vectorsOnly = vectors.map(item => item.vector);
     
     // Perform PCA to get coordinates
-    const coordinates = performPCA(vectorsOnly, projectionDimensions);
+    const pcaResult = performPCA(vectorsOnly, projectionDimensions);
+    const coordinates = pcaResult.coordinates;
+    
+    // Store the PCA components in the embeddingService for later use
+    embeddingService.pcaComponents = pcaResult.components;
+    embeddingService.embeddingDimension = vectorsOnly[0].length;
     
     // Combine words with their coordinates
     const result = vectors.map((item, index) => {
@@ -343,6 +348,50 @@ router.post('/findAnalogy', async (req, res) => {
   } catch (error) {
     console.error('Error calculating analogy:', error);
     res.status(500).json({ error: 'Failed to calculate analogy: ' + error.message });
+  }
+});
+
+// Endpoint to find nearest words to a point in the vector space
+router.post('/findNearestByCoordinates', async (req, res) => {
+  try {
+    const { coordinates, numResults = 3, dimensions = 2 } = req.body;
+    
+    // Validate input
+    if (!coordinates) {
+      return res.status(400).json({ error: 'Coordinates are required' });
+    }
+    
+    // Make sure embeddings are loaded
+    await embeddingService.loadEmbeddings();
+    
+    // Create a vector from the coordinates
+    let vector;
+    if (dimensions === 2) {
+      // For 2D, we need to project the coordinates back to the original space
+      // This is an approximation since we can't perfectly reverse PCA
+      vector = embeddingService.approximateVectorFromCoordinates(coordinates.x, coordinates.y);
+    } else if (dimensions === 3) {
+      // For 3D, we need to project the coordinates back to the original space
+      vector = embeddingService.approximateVectorFromCoordinates(coordinates.x, coordinates.y, coordinates.z);
+    } else {
+      return res.status(400).json({ error: 'Dimensions must be 2 or 3' });
+    }
+    
+    // Find nearest neighbors to this vector
+    const nearestWords = embeddingService.findVectorNeighbors(vector, numResults);
+    
+    res.json({
+      message: 'Nearest words found successfully',
+      data: {
+        coordinates,
+        dimensions,
+        nearestWords
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error finding nearest words by coordinates:', error);
+    res.status(500).json({ error: 'Failed to find nearest words: ' + error.message });
   }
 });
 
